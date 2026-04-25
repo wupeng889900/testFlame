@@ -1,0 +1,204 @@
+{
+  "sceneSize": { "x": 1600, "y": 1000 },
+  "zones": [
+    {
+      "name": "工作区 (办公桌)",
+      "position": { "x": 190, "y": 292 },
+      "size": { "x": 390, "y": 520 },
+      "color": "#2E74D8"
+    },
+    {
+      "name": "讨论区 (会议桌)",
+      "position": { "x": 615, "y": 300 },
+      "size": { "x": 340, "y": 460 },
+      "color": "#55A844"
+    },
+    {
+      "name": "休息区 (沙发)",
+      "position": { "x": 1055, "y": 352 },
+      "size": { "x": 340, "y": 485 },
+      "color": "#F08422"
+    }
+  ],
+  "desks": [
+    {
+      "spritePath": "assets/office_game/furniture/desks/desk_laptop.png",
+      "position": { "x": 200, "y": 200 },
+      "size": { "x": 150, "y": 113 },
+      "seats": [
+        { "position": { "x": 220, "y": 236 }, "direction": "up" }
+      ],
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/desks/desk_monitor_drawer.png",
+      "position": { "x": 380, "y": 200 },
+      "size": { "x": 150, "y": 113 },
+      "seats": [
+        { "position": { "x": 400, "y": 236 }, "direction": "up" }
+      ],
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/desks/desk_laptop_books.png",
+      "position": { "x": 560, "y": 200 },
+      "size": { "x": 150, "y": 113 },
+      "seats": [
+        { "position": { "x": 580, "y": 236 }, "direction": "up" }
+      ],
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/desks/desk_monitor_notes.png",
+      "position": { "x": 200, "y": 420 },
+      "size": { "x": 150, "y": 113 },
+      "seats": [
+        { "position": { "x": 220, "y": 456 }, "direction": "up" }
+      ],
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/desks/desk_bookshelf.png",
+      "position": { "x": 380, "y": 420 },
+      "size": { "x": 150, "y": 113 },
+      "seats": [
+        { "position": { "x": 400, "y": 456 }, "direction": "up" }
+      ],
+      "behindCharacters": true
+    }
+  ],
+  "sofas": [
+    {
+      "spritePath": "assets/office_game/furniture/lounge/coffee_table.png",
+      "position": { "x": 1292, "y": 420 },
+      "size": { "x": 150, "y": 88 },
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/lounge/sofa_3seat.png",
+      "position": { "x": 1290, "y": 390 },
+      "size": { "x": 315, "y": 190 },
+      "seats": [
+        { "position": { "x": 1210, "y": 290 }, "direction": "down" },
+        { "position": { "x": 1380, "y": 290 }, "direction": "down" },
+        { "position": { "x": 1290, "y": 396 }, "direction": "down" },
+        { "position": { "x": 1210, "y": 490 }, "direction": "up" },
+        { "position": { "x": 1380, "y": 490 }, "direction": "up" }
+      ],
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/lounge/sofa_1seat.png",
+      "position": { "x": 1210, "y": 260 },
+      "size": { "x": 135, "y": 120 },
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/lounge/sofa_1seat.png",
+      "position": { "x": 1380, "y": 260 },
+      "size": { "x": 135, "y": 120 },
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/lounge/sofa_1seat.png",
+      "position": { "x": 1210, "y": 520 },
+      "size": { "x": 135, "y": 120 },
+      "behindCharacters": true
+    },
+    {
+      "spritePath": "assets/office_game/furniture/lounge/sofa_1seat.png",
+      "position": { "x": 1380, "y": 520 },
+      "size": { "x": 135, "y": 120 },
+      "behindCharacters": true
+    }
+  ],
+  "meetingFurniture": [
+    {
+      "spritePath": "assets/office_game/furniture/meeting/meeting_table_7seat.png",
+      "position": { "x": 840, "y": 320 },
+      "size": { "x": 520, "y": 230 },
+      "seats": [
+        { "position": { "x": 800, "y": 192 }, "direction": "down" },
+        { "position": { "x": 686, "y": 245 }, "direction": "right" },
+        { "position": { "x": 686, "y": 340 }, "direction": "right" },
+        { "position": { "x": 760, "y": 438 }, "direction": "up" },
+        { "position": { "x": 900, "y": 438 }, "direction": "up" },
+        { "position": { "x": 995, "y": 340 }, "direction": "left" },
+        { "position": { "x": 995, "y": 245 }, "direction": "left" }
+      ],
+      "behindCharacters": true,
+      "priorityOffset": -30,
+      "angleDegrees": 90
+    }
+  ],
+  "characters": [
+    {
+      "name": "程序员",
+      "spriteBaseName": "programmer",
+      "position": { "x": 180, "y": 220 },
+      "motionAtlasBasePath": "assets/office_game/characters/programmer"
+    },
+    {
+      "name": "设计师",
+      "spriteBaseName": "designer",
+      "position": { "x": 360, "y": 220 },
+      "motionAtlasBasePath": "assets/office_game/characters/designer"
+    },
+    {
+      "name": "项目经理",
+      "spriteBaseName": "pm",
+      "position": { "x": 540, "y": 220 },
+      "motionAtlasBasePath": "assets/office_game/characters/pm"
+    },
+    {
+      "name": "测试",
+      "spriteBaseName": "tester",
+      "position": { "x": 180, "y": 440 },
+      "motionAtlasBasePath": "assets/office_game/characters/tester"
+    },
+    {
+      "name": "运营",
+      "spriteBaseName": "ops",
+      "position": { "x": 360, "y": 440 },
+      "motionAtlasBasePath": "assets/office_game/characters/ops"
+    }
+  ],
+  "decorations": {
+    "waterDispenserSpritePath": "assets/office_game/furniture/decor/water_dispenser.png",
+    "waterDispenserPosition": { "x": 600, "y": 585 },
+    "waterDispenserSize": { "x": 72, "y": 132 },
+    "plantSpritePath": "assets/office_game/furniture/decor/plant_large.png",
+    "plantSize": { "x": 76, "y": 136 },
+    "plantPositions": [
+      { "x": 70, "y": 180 },
+      { "x": 1490, "y": 170 },
+      { "x": 70, "y": 560 }
+    ],
+    "extraSprites": [
+      {
+        "path": "assets/office_game/furniture/decor/whiteboard.png",
+        "position": { "x": 840, "y": 170 },
+        "size": { "x": 176, "y": 118 },
+        "priority": -39
+      },
+      {
+        "path": "assets/office_game/furniture/decor/plant_round.png",
+        "position": { "x": 1520, "y": 350 },
+        "size": { "x": 84, "y": 110 },
+        "priority": -39
+      },
+      {
+        "path": "assets/office_game/furniture/decor/plant_spiky.png",
+        "position": { "x": 1160, "y": 580 },
+        "size": { "x": 84, "y": 118 },
+        "priority": -39
+      },
+      {
+        "path": "assets/office_game/furniture/desks/desk_bookshelf.png",
+        "position": { "x": 100, "y": 700 },
+        "size": { "x": 210, "y": 120 },
+        "priority": -39
+      }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "referenceStyleImage": "assets/atlas/场景布局左边+资源目录规划.png",
+  "generatedAssetManifest": "assets/office_game/manifest.json",
+  "characters": [
+    {
+      "id": "programmer",
+      "name": "程序员",
+      "basePath": "assets/office_game/characters/programmer"
+    },
+    {
+      "id": "designer",
+      "name": "设计师",
+      "basePath": "assets/office_game/characters/designer"
+    },
+    {
+      "id": "pm",
+      "name": "项目经理",
+      "basePath": "assets/office_game/characters/pm"
+    },
+    {
+      "id": "tester",
+      "name": "测试",
+      "basePath": "assets/office_game/characters/tester"
+    },
+    {
+      "id": "ops",
+      "name": "运营",
+      "basePath": "assets/office_game/characters/ops"
+    }
+  ],
+  "props": [
+    {
+      "id": "desk_laptop",
+      "currentPath": "assets/office_game/furniture/desks/desk_laptop.png"
+    },
+    {
+      "id": "meeting_table_7seat",
+      "currentPath": "assets/office_game/furniture/meeting/meeting_table_7seat.png"
+    },
+    {
+      "id": "sofa_3seat",
+      "currentPath": "assets/office_game/furniture/lounge/sofa_3seat.png"
+    }
+  ]
+}

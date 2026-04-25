@@ -1,0 +1,35 @@
+{
+  "source_image": "source_sheet.png",
+  "master_name": "主视觉",
+  "grid": 8,
+  "slices": [
+    {
+      "name": "工作区桌面",
+      "x": 24,
+      "y": 144,
+      "width": 160,
+      "height": 96
+    },
+    {
+      "name": "休息区沙发",
+      "x": 24,
+      "y": 488,
+      "width": 160,
+      "height": 80
+    },
+    {
+      "name": "讨论区会议桌",
+      "x": 552,
+      "y": 112,
+      "width": 240,
+      "height": 120
+    },
+    {
+      "name": "状态面板",
+      "x": 688,
+      "y": 456,
+      "width": 248,
+      "height": 88
+    }
+  ]
+}

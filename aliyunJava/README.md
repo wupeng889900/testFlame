@@ -1,0 +1,40 @@
+# 大模型智能呼叫完整工程示例
+
+该项目为LlmSmartCall的完整工程示例。
+
+**工程代码建议使用更安全的无AK方式，凭据配置方式请参阅：[管理访问凭据](https://help.aliyun.com/zh/sdk/developer-reference/v2-manage-access-credentials)。**
+
+## 运行条件
+
+- 下载并解压需要语言的代码;
+
+- *最低要求Java 8*
+
+## 执行步骤
+
+完成凭据配置后，可以在**解压代码所在目录下**按如下的步骤执行：
+
+```sh
+mvn clean package
+java -jar target/sample-1.0.0-jar-with-dependencies.jar
+```
+
+## 使用的 API
+
+-  LlmSmartCall：基于大模型的智能外呼。 更多信息可参考：[文档](https://next.api.aliyun.com/document/aiccs/2019-10-15/LlmSmartCall)
+
+## API 返回示例
+
+*下列输出值仅作为参考，实际输出结构可能稍有不同，以实际调用为准。*
+
+
+- JSON 格式 
+```js
+{
+  "RequestId": "D6A51251-F7C4-596A-9F45-3C3219A5450D",
+  "Code": "OK",
+  "Message": "OK",
+  "CallId": "125165515***^11195613****"
+}
+```
+
