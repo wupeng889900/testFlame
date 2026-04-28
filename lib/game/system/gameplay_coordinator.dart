@@ -60,9 +60,17 @@ class GameplayCoordinator {
   }
 
   void handleRemoteCommand(RemoteCommand command) {
-    final character = characters.firstWhere(
-      (c) => c.name == command.characterName,
-    );
+    Character? character;
+    for (final candidate in characters) {
+      if (candidate.name == command.characterName) {
+        character = candidate;
+        break;
+      }
+    }
+    if (character == null) {
+      return;
+    }
+
     final task = _taskFromAction(command.action, duration: command.duration);
     if (task == null) {
       return;

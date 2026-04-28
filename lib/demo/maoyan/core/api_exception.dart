@@ -10,17 +10,18 @@ class ApiException implements Exception {
 }
 
 class NetworkException extends ApiException {
-  NetworkException(String message) : super(message);
+  NetworkException(super.message);
 }
 
 class AuthException extends ApiException {
-  AuthException(String message) : super(message, statusCode: 401);
+  AuthException(super.message) : super(statusCode: 401);
 }
 
 class RateLimitException extends ApiException {
-  RateLimitException(String message) : super(message, statusCode: 429);
+  RateLimitException(super.message) : super(statusCode: 429);
 }
 
 class ServerException extends ApiException {
-  ServerException(String message, int? statusCode) : super(message, statusCode: statusCode);
+  ServerException(super.message, int? statusCode)
+    : super(statusCode: statusCode);
 }

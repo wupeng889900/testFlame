@@ -1,9 +1,13 @@
 import 'dart:convert';
 
 import 'package:flame/components.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 import '../core/office_asset_policy.dart';
+import 'layout_file_loader_stub.dart'
+    if (dart.library.io) 'layout_file_loader_io.dart';
 
 class CharacterSpawnConfig {
   final String name;
@@ -60,13 +64,19 @@ class ZoneConfig {
 class SeatPlacementConfig {
   final Vector2 position;
   final String? direction;
+  final bool exactPosition;
 
-  const SeatPlacementConfig({required this.position, this.direction});
+  const SeatPlacementConfig({
+    required this.position,
+    this.direction,
+    this.exactPosition = false,
+  });
 
   factory SeatPlacementConfig.fromJson(Map<String, dynamic> json) {
     return SeatPlacementConfig(
       position: _vectorFromJson(json['position'] as Map<String, dynamic>),
       direction: json['direction'] as String?,
+      exactPosition: json['exactPosition'] as bool? ?? false,
     );
   }
 }
@@ -97,7 +107,10 @@ class FurniturePlacementConfig {
       size: _vectorFromJson(json['size'] as Map<String, dynamic>),
       seats:
           (json['seats'] as List<dynamic>? ?? const [])
-              .map((item) => SeatPlacementConfig.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) =>
+                    SeatPlacementConfig.fromJson(item as Map<String, dynamic>),
+              )
               .toList(),
       behindCharacters: json['behindCharacters'] as bool? ?? false,
       priorityOffset: json['priorityOffset'] as int? ?? 0,
@@ -165,7 +178,11 @@ class DecorationConfig {
               .toList(),
       extraSprites:
           (json['extraSprites'] as List<dynamic>? ?? const [])
-              .map((item) => DecorationSpriteConfig.fromJson(item as Map<String, dynamic>))
+              .map(
+                (item) => DecorationSpriteConfig.fromJson(
+                  item as Map<String, dynamic>,
+                ),
+              )
               .toList(),
     );
   }
@@ -188,7 +205,7 @@ class OfficeSceneConfig {
   static DecorationConfig decorations = _defaultDecorations();
 
   static Future<void> load() async {
-    final raw = await rootBundle.loadString(layoutAsset);
+    final raw = await _loadLayoutAsset();
     final json = jsonDecode(raw) as Map<String, dynamic>;
 
     sceneSize = _vectorFromJson(json['sceneSize'] as Map<String, dynamic>);
@@ -230,7 +247,29 @@ class OfficeSceneConfig {
     decorations = DecorationConfig.fromJson(
       json['decorations'] as Map<String, dynamic>,
     );
+  }
 
+  static Future<String> _loadLayoutAsset() async {
+    final projectAsset = await tryLoadProjectAsset(layoutAsset);
+    if (projectAsset != null) {
+      return projectAsset;
+    }
+
+    if (!kIsWeb) {
+      return rootBundle.loadString(layoutAsset, cache: false);
+    }
+
+    final cacheBuster = DateTime.now().microsecondsSinceEpoch;
+    final assetUri = Uri.base.resolve('assets/$layoutAsset?v=$cacheBuster');
+    try {
+      final response = await http.get(assetUri);
+      if (response.statusCode == 200) {
+        return utf8.decode(response.bodyBytes);
+      }
+      throw StateError('Layout asset HTTP ${response.statusCode}');
+    } catch (_) {
+      return rootBundle.loadString(layoutAsset, cache: false);
+    }
   }
 
   static List<ZoneConfig> _defaultZones() {
@@ -422,7 +461,8 @@ class OfficeSceneConfig {
 
   static DecorationConfig _defaultDecorations() {
     return DecorationConfig(
-      waterDispenserSpritePath: '$assetRoot/furniture/decor/water_dispenser.png',
+      waterDispenserSpritePath:
+          '$assetRoot/furniture/decor/water_dispenser.png',
       waterDispenserPosition: Vector2(600, 585),
       waterDispenserSize: Vector2(72, 132),
       plantSpritePath: '$assetRoot/furniture/decor/plant_large.png',
@@ -455,10 +495,7 @@ class OfficeSceneConfig {
 }
 
 Vector2 _vectorFromJson(Map<String, dynamic> json) {
-  return Vector2(
-    (json['x'] as num).toDouble(),
-    (json['y'] as num).toDouble(),
-  );
+  return Vector2((json['x'] as num).toDouble(), (json['y'] as num).toDouble());
 }
 
 Color _colorFromHex(String value) {

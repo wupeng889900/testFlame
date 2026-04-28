@@ -105,6 +105,10 @@ class OfficeSceneBuilder {
     FurniturePlacementConfig placement,
     SeatPlacementConfig seat,
   ) {
+    if (seat.exactPosition) {
+      return seat.position.clone();
+    }
+
     const double margin = 14.0;
     final localSeatOffset = seat.position - placement.position;
     final radians = placement.angleDegrees * math.pi / 180;

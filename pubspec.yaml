@@ -86,8 +86,6 @@ flutter:
     - assets/office_game/characters/ops/meeting_states/
     - assets/office_game/characters/ops/sofa_states/
     - assets/environment/
-    - assets/office_prototype/
-    - assets/images/
     - assets/data/
 
   fonts:

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'core/api_client.dart';
 import 'movie_model.dart';
 
@@ -56,7 +58,7 @@ class MaoyanService {
                   );
                 }
               } catch (e) {
-                print('Chunk fetch error: $e');
+                debugPrint('Chunk fetch error: $e');
                 // 个别分片失败继续拉取下一个分片
               }
             }
@@ -67,7 +69,7 @@ class MaoyanService {
       }
       return [];
     } catch (e) {
-      print('Maoyan fetch error: $e');
+      debugPrint('Maoyan fetch error: $e');
       rethrow;
     }
   }
@@ -90,7 +92,7 @@ class MaoyanService {
       }
       return [];
     } catch (e) {
-      print('Maoyan search error: $e');
+      debugPrint('Maoyan search error: $e');
       return [];
     }
   }
@@ -111,7 +113,7 @@ class MaoyanService {
       }
       return null;
     } catch (e) {
-      print('Maoyan detail fetch error: $e');
+      debugPrint('Maoyan detail fetch error: $e');
       rethrow;
     }
   }
@@ -142,7 +144,7 @@ class MaoyanService {
       }
       return [];
     } catch (e) {
-      print('Maoyan cinemas fetch error: $e');
+      debugPrint('Maoyan cinemas fetch error: $e');
       return [];
     }
   }
@@ -163,7 +165,7 @@ class MaoyanService {
       }
       return null;
     } catch (e) {
-      print('Maoyan cinema detail error: $e');
+      debugPrint('Maoyan cinema detail error: $e');
       return null;
     }
   }

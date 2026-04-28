@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'api_exception.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   late Dio _dio;
@@ -14,9 +13,9 @@ class ApiClient {
         connectTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
         headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
       ),
     );
 
@@ -39,13 +38,6 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     bool useCache = true,
   }) async {
-    if (useCache) {
-      final cachedData = await _getCachedData(path, queryParameters);
-      if (cachedData != null) {
-        // Return mock response from cache if needed or just use as fallback
-      }
-    }
-
     try {
       return await _dio.get(path, queryParameters: queryParameters);
     } on DioException catch (e) {
@@ -75,19 +67,5 @@ class ApiClient {
         if (e.error is SocketException) return NetworkException('网络不可用');
         return ApiException('未知错误: ${e.message}');
     }
-  }
-
-  // Simple SharedPreferences based caching (Placeholder)
-  Future<void> _saveToCache(String key, String data) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, data);
-  }
-
-  Future<String?> _getCachedData(
-    String path,
-    Map<String, dynamic>? params,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('$path${params?.toString()}');
   }
 }

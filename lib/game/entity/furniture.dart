@@ -206,6 +206,63 @@ class Furniture extends PositionComponent with HasGameReference<FlameGame> {
     return Vector2((size.x - collisionSize.x) / 2, size.y - collisionSize.y);
   }
 
+  Rect collisionWorldRect() {
+    final localPosition = _collisionPosition();
+    final collisionSize = _collisionSize();
+    final topLeft = Offset(
+      x - size.x / 2 + localPosition.x,
+      y - size.y / 2 + localPosition.y,
+    );
+    return Rect.fromLTWH(
+      topLeft.dx,
+      topLeft.dy,
+      collisionSize.x,
+      collisionSize.y,
+    );
+  }
+
+  Rect navigationWorldRect() {
+    final visualRect = Rect.fromCenter(
+      center: Offset(x, y),
+      width: size.x,
+      height: size.y,
+    );
+
+    if (spritePath.contains('desk_chair')) {
+      return visualRect.deflate(4);
+    }
+    if (spritePath.contains('meeting_table')) {
+      return visualRect.deflate(8);
+    }
+    if (spritePath.contains('sofa') || spritePath.contains('coffee_table')) {
+      return visualRect.deflate(4);
+    }
+    if (spritePath.contains('chair')) {
+      return visualRect.deflate(8);
+    }
+    return collisionWorldRect();
+  }
+
+  Vector2 approachPointForSeat(Seat seat) {
+    final rect = navigationWorldRect();
+    const double gap = 44.0;
+
+    switch (seat.direction) {
+      case 'up':
+        return Vector2(seat.position.x, rect.bottom + gap);
+      case 'down':
+        return Vector2(seat.position.x, rect.top - gap);
+      case 'left':
+        return Vector2(rect.right + gap, seat.position.y);
+      case 'right':
+        return Vector2(rect.left - gap, seat.position.y);
+      case null:
+        return seat.position.clone();
+    }
+
+    return seat.position.clone();
+  }
+
   Vector2 _collisionSize() {
     if (spritePath.contains('desk')) {
       return Vector2(size.x * 0.82, size.y * 0.24);

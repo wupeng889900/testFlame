@@ -1,12 +1,12 @@
 {
-    "name": "office_sim",
-    "short_name": "office_sim",
+    "name": "Office Game",
+    "short_name": "Office Game",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#183247",
+    "theme_color": "#2E74D8",
+    "description": "A playable office simulation game.",
+    "orientation": "landscape-primary",
     "prefer_related_applications": false,
     "icons": [
         {

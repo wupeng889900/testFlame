@@ -74,6 +74,12 @@ class OfficeGame extends FlameGame
     );
   }
 
+  void resetCamera() {
+    camera.viewfinder.position = Vector2.zero();
+    camera.viewfinder.zoom = 1.0;
+    camera.viewfinder.anchor = Anchor.topLeft;
+  }
+
   @override
   void onTapDown(TapDownInfo info) {
     final point = camera.globalToLocal(info.eventPosition.global);
