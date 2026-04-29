@@ -41,14 +41,14 @@ void main() {
     expect(
       OfficeAssetPolicy.withinPhysicalTolerance(
         actualSceneDp: coffeeTable.size.x,
-        expectedMillimeters: 1200,
+        expectedMillimeters: 896,
       ),
       isTrue,
     );
     expect(
       OfficeAssetPolicy.withinPhysicalTolerance(
         actualSceneDp: coffeeTable.size.y,
-        expectedMillimeters: 704,
+        expectedMillimeters: 1344,
       ),
       isTrue,
     );
@@ -57,14 +57,18 @@ void main() {
   test('all atlas assets have explicit loading classifications', () {
     expect(
       OfficeAssetPolicy.firstScreenAssets,
-      contains('assets/atlas/场景布局左边+资源目录规划.png'),
+      contains('assets/data/office_game_layout.json'),
     );
     expect(
       OfficeAssetPolicy.firstScreenAssets,
-      contains('assets/office_game/manifest.json'),
+      contains('assets/environment/office_background_cutout.png'),
     );
-    expect(OfficeAssetPolicy.delayedAssets, contains('assets/atlas/家具切图.png'));
-    expect(OfficeAssetPolicy.delayedAssets, contains('assets/atlas/人物切图.png'));
+    expect(
+      OfficeAssetPolicy.delayedAssets,
+      contains(
+        'assets/office_game/characters/pm/meeting_seated/meeting_seated_up.png',
+      ),
+    );
   });
 
   test('image layout rules preserve asset aspect ratio', () {

@@ -7,22 +7,18 @@ class OfficeAssetPolicy {
   static const double physicalTolerance = 0.02;
 
   static const Map<String, OfficeImageLayoutRule> layoutRules = {
-    'assets/atlas/场景布局左边+资源目录规划.png': OfficeImageLayoutRule(
-      fit: BoxFit.contain,
-      alignment: Alignment.center,
-      role: 'reference style image',
-    ),
     'assets/environment/office_background_cutout.png': OfficeImageLayoutRule(
       fit: BoxFit.contain,
       alignment: Alignment.center,
       role: 'office background',
     ),
-    'assets/office_game/furniture/desks/desk_laptop.png': OfficeImageLayoutRule(
-      fit: BoxFit.contain,
-      alignment: Alignment.center,
-      role: 'desk',
-    ),
-    'assets/office_game/furniture/meeting/meeting_table_7seat.png':
+    'assets/office_game/furniture/desks/desk_chair_row2_01.png':
+        OfficeImageLayoutRule(
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          role: 'desk with chair',
+        ),
+    'assets/office_game/furniture/meeting/meeting_table_top.png':
         OfficeImageLayoutRule(
           fit: BoxFit.contain,
           alignment: Alignment.center,
@@ -32,11 +28,6 @@ class OfficeAssetPolicy {
       fit: BoxFit.contain,
       alignment: Alignment.center,
       role: 'sofa',
-    ),
-    'assets/office_game/furniture/lounge/sofa_1seat.png': OfficeImageLayoutRule(
-      fit: BoxFit.contain,
-      alignment: Alignment.center,
-      role: 'lounge chair',
     ),
     'assets/office_game/furniture/lounge/sofa_chair_left.png':
         OfficeImageLayoutRule(
@@ -50,43 +41,37 @@ class OfficeAssetPolicy {
           alignment: Alignment.center,
           role: 'lounge chair right',
         ),
-    'assets/office_game/furniture/lounge/coffee_table.png':
-        OfficeImageLayoutRule(
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          role: 'coffee table',
-        ),
-    'assets/office_game/furniture/decor/plant_large.png': OfficeImageLayoutRule(
+    'assets/office_game/furniture/decor/whiteboard.png': OfficeImageLayoutRule(
       fit: BoxFit.contain,
-      alignment: Alignment.bottomCenter,
-      role: 'plant',
+      alignment: Alignment.center,
+      role: 'whiteboard',
     ),
-    'assets/office_game/furniture/decor/water_dispenser.png':
-        OfficeImageLayoutRule(
-          fit: BoxFit.contain,
-          alignment: Alignment.bottomCenter,
-          role: 'water dispenser',
-        ),
   };
 
   static const Set<String> firstScreenAssets = {
-    'assets/AssetCatalog.json',
-    'assets/office_game/manifest.json',
-    'assets/atlas/场景布局左边+资源目录规划.png',
+    'assets/data/office_game_layout.json',
     'assets/environment/office_background_cutout.png',
-    'assets/office_game/furniture/desks/desk_laptop.png',
-    'assets/office_game/furniture/meeting/meeting_table_7seat.png',
+    'assets/office_game/furniture/desks/desk_chair_row2_01.png',
+    'assets/office_game/furniture/desks/desk_chair_row2_02.png',
+    'assets/office_game/furniture/desks/desk_chair_row2_03.png',
+    'assets/office_game/furniture/desks/desk_chair_row2_04.png',
+    'assets/office_game/furniture/desks/desk_chair_row2_05.png',
+    'assets/office_game/furniture/desks/desk_chair_row2_06.png',
+    'assets/office_game/furniture/meeting/meeting_table_top.png',
+    'assets/office_game/furniture/meeting/meeting_chair_down.png',
+    'assets/office_game/furniture/meeting/meeting_chair_left.png',
+    'assets/office_game/furniture/meeting/meeting_chair_right.png',
+    'assets/office_game/furniture/meeting/meeting_chair_up.png',
     'assets/office_game/furniture/lounge/sofa_3seat.png',
-    'assets/office_game/furniture/lounge/sofa_1seat.png',
     'assets/office_game/furniture/lounge/sofa_chair_left.png',
     'assets/office_game/furniture/lounge/sofa_chair_right.png',
-    'assets/office_game/furniture/lounge/coffee_table.png',
+    'assets/office_game/furniture/lounge/sofa_bottom.png',
     'assets/office_game/ui/bubble_active.png',
     'assets/office_game/ui/bubble_chat.png',
     'assets/office_game/ui/bubble_sleep.png',
     'assets/office_game/ui/selected_ring.png',
-    'assets/office_game/furniture/decor/plant_large.png',
-    'assets/office_game/furniture/decor/water_dispenser.png',
+    'assets/office_game/furniture/chairs/office_chair_back.png',
+    'assets/office_game/furniture/decor/whiteboard.png',
     'assets/office_game/characters/programmer/idle/idle_down.png',
     'assets/office_game/characters/designer/idle/idle_down.png',
     'assets/office_game/characters/pm/idle/idle_down.png',
@@ -95,13 +80,11 @@ class OfficeAssetPolicy {
   };
 
   static const Set<String> delayedAssets = {
-    'assets/atlas/家具切图.png',
-    'assets/atlas/人物切图.png',
-    'assets/office_game/furniture/decor/whiteboard.png',
-    'assets/office_game/furniture/decor/plant_round.png',
-    'assets/office_game/furniture/decor/plant_spiky.png',
-    'assets/office_game/ui/bubble_thought.png',
-    'assets/office_game/ui/location_pin.png',
+    'assets/office_game/characters/programmer/meeting_seated/meeting_seated_right.png',
+    'assets/office_game/characters/designer/meeting_seated/meeting_seated_left.png',
+    'assets/office_game/characters/pm/meeting_seated/meeting_seated_up.png',
+    'assets/office_game/characters/tester/meeting_seated/meeting_seated_left.png',
+    'assets/office_game/characters/ops/meeting_seated/meeting_seated_right.png',
   };
 
   static double sceneDpToPhysicalMillimeters(double sceneDp) {

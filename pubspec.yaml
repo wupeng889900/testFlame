@@ -51,9 +51,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/AssetCatalog.json
-    - assets/atlas/
-    - assets/office_game/
     - assets/office_game/furniture/desks/
     - assets/office_game/furniture/chairs/
     - assets/office_game/furniture/meeting/
@@ -64,29 +61,34 @@ flutter:
     - assets/office_game/characters/programmer/idle/
     - assets/office_game/characters/programmer/sit_desk/
     - assets/office_game/characters/programmer/meeting_states/
+    - assets/office_game/characters/programmer/meeting_seated/
     - assets/office_game/characters/programmer/sofa_states/
     - assets/office_game/characters/designer/walk/
     - assets/office_game/characters/designer/idle/
     - assets/office_game/characters/designer/sit_desk/
     - assets/office_game/characters/designer/meeting_states/
+    - assets/office_game/characters/designer/meeting_seated/
     - assets/office_game/characters/designer/sofa_states/
     - assets/office_game/characters/pm/walk/
     - assets/office_game/characters/pm/idle/
     - assets/office_game/characters/pm/sit_desk/
     - assets/office_game/characters/pm/meeting_states/
+    - assets/office_game/characters/pm/meeting_seated/
     - assets/office_game/characters/pm/sofa_states/
     - assets/office_game/characters/tester/walk/
     - assets/office_game/characters/tester/idle/
     - assets/office_game/characters/tester/sit_desk/
     - assets/office_game/characters/tester/meeting_states/
+    - assets/office_game/characters/tester/meeting_seated/
     - assets/office_game/characters/tester/sofa_states/
     - assets/office_game/characters/ops/walk/
     - assets/office_game/characters/ops/idle/
     - assets/office_game/characters/ops/sit_desk/
     - assets/office_game/characters/ops/meeting_states/
+    - assets/office_game/characters/ops/meeting_seated/
     - assets/office_game/characters/ops/sofa_states/
     - assets/environment/
-    - assets/data/
+    - assets/data/office_game_layout.json
 
   fonts:
     - family: LocalChinese

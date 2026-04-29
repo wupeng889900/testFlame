@@ -12,8 +12,13 @@ import 'scene_config.dart';
 class OfficeSceneBuilder {
   final FlameGame game;
   final World world;
+  final CharacterExitRouteBuilder? exitRouteBuilder;
 
-  const OfficeSceneBuilder({required this.game, required this.world});
+  const OfficeSceneBuilder({
+    required this.game,
+    required this.world,
+    this.exitRouteBuilder,
+  });
 
   Future<void> buildBackground() async {
     world.add(
@@ -171,6 +176,7 @@ class OfficeSceneBuilder {
         position: spawn.position,
         animationFrames: spawn.animationFrames,
         motionAtlasBasePath: spawn.motionAtlasBasePath,
+        exitRouteBuilder: exitRouteBuilder,
       );
       characters.add(character);
       world.add(character);
@@ -185,6 +191,12 @@ class OfficeSceneBuilder {
       required Vector2 size,
       int priority = -40,
     }) async {
+      if (path.isEmpty) {
+        return;
+      }
+      if (!GameAssetCatalog.instance.hasAsset(path)) {
+        throw StateError('Missing asset: $path');
+      }
       final sprite = await game.loadSprite(path);
       world.add(
         SpriteComponent(
@@ -198,45 +210,57 @@ class OfficeSceneBuilder {
       );
     }
 
-    try {
-      await addSprite(
-        path: decorations.waterDispenserSpritePath,
-        position: decorations.waterDispenserPosition,
-        size: decorations.waterDispenserSize,
-      );
-    } catch (_) {
-      world.add(
-        RectangleComponent(
+    if (decorations.waterDispenserSpritePath.isNotEmpty) {
+      try {
+        await addSprite(
+          path: decorations.waterDispenserSpritePath,
           position: decorations.waterDispenserPosition,
           size: decorations.waterDispenserSize,
-          paint: Paint()..color = Colors.lightBlueAccent.withValues(alpha: 0.5),
-          priority: -40,
-        )..anchor = Anchor.center,
-      );
-    }
-
-    for (final pos in decorations.plantPositions) {
-      try {
-        final plantSprite = await game.loadSprite(decorations.plantSpritePath);
-        world.add(
-          SpriteComponent(
-            sprite: plantSprite,
-            position: pos,
-            size: decorations.plantSize,
-            anchor: Anchor.center,
-            priority: -40,
-            paint: Paint()..filterQuality = FilterQuality.none,
-          ),
         );
       } catch (_) {
         world.add(
-          CircleComponent(
-            radius: 15,
-            position: pos,
-            paint: Paint()..color = Colors.green.withValues(alpha: 0.6),
+          RectangleComponent(
+            position: decorations.waterDispenserPosition,
+            size: decorations.waterDispenserSize,
+            paint:
+                Paint()..color = Colors.lightBlueAccent.withValues(alpha: 0.5),
             priority: -40,
           )..anchor = Anchor.center,
         );
+      }
+    }
+
+    if (decorations.plantSpritePath.isNotEmpty) {
+      for (final pos in decorations.plantPositions) {
+        try {
+          if (!GameAssetCatalog.instance.hasAsset(
+            decorations.plantSpritePath,
+          )) {
+            throw StateError('Missing asset: ${decorations.plantSpritePath}');
+          }
+          final plantSprite = await game.loadSprite(
+            decorations.plantSpritePath,
+          );
+          world.add(
+            SpriteComponent(
+              sprite: plantSprite,
+              position: pos,
+              size: decorations.plantSize,
+              anchor: Anchor.center,
+              priority: -40,
+              paint: Paint()..filterQuality = FilterQuality.none,
+            ),
+          );
+        } catch (_) {
+          world.add(
+            CircleComponent(
+              radius: 15,
+              position: pos,
+              paint: Paint()..color = Colors.green.withValues(alpha: 0.6),
+              priority: -40,
+            )..anchor = Anchor.center,
+          );
+        }
       }
     }
 

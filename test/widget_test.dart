@@ -4,16 +4,16 @@ import 'package:office_sim/main.dart';
 
 void main() {
   testWidgets('app builds', (WidgetTester tester) async {
-    await tester.pumpWidget(const OfficeGameApp());
+    await tester.pumpWidget(const OfficeGameDemoApp());
     await tester.pump();
 
-    expect(find.byType(OfficeGameApp), findsOneWidget);
+    expect(find.byType(OfficeGameDemoApp), findsOneWidget);
   });
 
   testWidgets('office game page opens as the first screen', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const OfficeGameApp());
+    await tester.pumpWidget(const OfficeGameDemoApp());
     await tester.pump();
     await tester.pump(const Duration(seconds: 5));
 

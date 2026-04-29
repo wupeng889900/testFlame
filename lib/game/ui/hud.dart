@@ -4,24 +4,39 @@ import '../core/enums.dart';
 import '../world/office_game.dart';
 
 class OfficeHUD extends PositionComponent with HasGameReference<OfficeGame> {
-  OfficeHUD() : super(position: Vector2(18, 18), size: Vector2(330, 190));
+  static final Vector2 _logicalSize = Vector2(330, 190);
+  double _scale = 1.0;
+
+  OfficeHUD() : super(position: Vector2(18, 18), size: _logicalSize.clone());
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    final availableWidth = size.x - 24;
+    _scale = (availableWidth / _logicalSize.x).clamp(0.72, 1.0);
+    this.size = _logicalSize * _scale;
+    position = Vector2(12, 12);
+  }
 
   @override
   void render(Canvas canvas) {
+    canvas.save();
+    canvas.scale(_scale);
+
     final shadowPaint =
         Paint()
           ..color = Colors.black.withValues(alpha: 0.18)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        size.toRect().shift(const Offset(3, 4)),
+        _logicalSize.toRect().shift(const Offset(3, 4)),
         const Radius.circular(10),
       ),
       shadowPaint,
     );
 
     final panelRect = RRect.fromRectAndRadius(
-      size.toRect(),
+      _logicalSize.toRect(),
       const Radius.circular(14),
     );
     canvas.drawRRect(panelRect, Paint()..color = const Color(0xF8FFFFFF));
@@ -34,7 +49,7 @@ class OfficeHUD extends PositionComponent with HasGameReference<OfficeGame> {
     );
     canvas.drawRRect(
       RRect.fromRectAndCorners(
-        Rect.fromLTWH(0, 0, size.x, 42),
+        Rect.fromLTWH(0, 0, _logicalSize.x, 42),
         topLeft: const Radius.circular(14),
         topRight: const Radius.circular(14),
       ),
@@ -100,7 +115,7 @@ class OfficeHUD extends PositionComponent with HasGameReference<OfficeGame> {
       color: const Color(0xFF53677D),
     );
 
-    final barRect = Rect.fromLTWH(18, 140, size.x - 36, 10);
+    final barRect = Rect.fromLTWH(18, 140, _logicalSize.x - 36, 10);
     canvas.drawRRect(
       RRect.fromRectAndRadius(barRect, const Radius.circular(4)),
       Paint()..color = const Color(0xFFE1E8F2),
@@ -114,6 +129,8 @@ class OfficeHUD extends PositionComponent with HasGameReference<OfficeGame> {
       ),
       Paint()..color = const Color(0xFF55A844),
     );
+
+    canvas.restore();
   }
 
   void _drawMetric(

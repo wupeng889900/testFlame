@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/sprite.dart';
@@ -17,12 +16,15 @@ import '../entity/furniture.dart';
 import '../ui/status_bubble.dart';
 import '../world/scene_config.dart';
 
+typedef CharacterExitRouteBuilder = List<Vector2>? Function(Vector2 start);
+
 class Character extends SpriteAnimationGroupComponent<CharacterState>
-    with HasGameReference<FlameGame>, CollisionCallbacks {
+    with HasGameReference<FlameGame> {
   final String name;
   final String spriteSheetPath;
   final List<String>? animationFrames;
   final String? motionAtlasBasePath;
+  final CharacterExitRouteBuilder? exitRouteBuilder;
 
   Vector2? targetPosition;
   Seat? currentSeat;
@@ -42,12 +44,17 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
   double _visualTime = 0.0;
   double _idleCooldownRemaining = 0.0;
   double _movementBlockRemaining = 0.0;
-  bool _movementHitboxAdded = false;
+  double _movementNoProgressTime = 0.0;
+  double _movementBestDistance = double.infinity;
+  double _movementStillTime = 0.0;
   Vector2 _facing = Vector2(0, 1);
   final Vector2 _spawnPosition;
-  final Vector2 _previousPosition = Vector2.zero();
+  final Vector2 _movementLastPosition = Vector2.zero();
   Vector2? _routeDestination;
-  Vector2? _snapArrivalPosition;
+  Vector2? _movementWatchTarget;
+  Vector2? _seatPositionOverride;
+  String? _seatDirectionOverride;
+  bool _centerTaskSpriteOnPosition = false;
 
   late final _CharacterVisualProfile _profile =
       _CharacterVisualProfile.fromName(name);
@@ -58,6 +65,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     required Vector2 position,
     this.animationFrames,
     this.motionAtlasBasePath,
+    this.exitRouteBuilder,
   }) : _spawnPosition = position.clone(),
        super(
          size: GameConstants.characterSize,
@@ -67,8 +75,14 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
 
   bool get isMoving => targetPosition != null || _routeQueue.isNotEmpty;
   bool get readyForAssignment =>
-      !isMoving && _activeTask == null && _idleCooldownRemaining <= 0;
+      current != null &&
+      animations != null &&
+      !isMoving &&
+      _activeTask == null &&
+      _idleCooldownRemaining <= 0;
   CharacterTask? get activeTask => _activeTask;
+  bool get isIdleOnSofa =>
+      currentSeat?.type == SeatType.sofa && !isMoving && _activeTask == null;
   bool get _isDeskSeated =>
       current == CharacterState.work &&
       currentSeat?.type == SeatType.desk &&
@@ -78,6 +92,8 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
       !isMoving &&
       (current == CharacterState.work || current == CharacterState.rest) &&
       _currentTaskSprite == null;
+  String? get _effectiveSeatDirection =>
+      _seatDirectionOverride ?? currentSeat?.direction;
   String get stateLabel {
     if (current == CharacterState.walk) {
       return '移动中';
@@ -119,7 +135,6 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
         await _loadDirectionalMotionAtlas(motionAtlasBasePath!);
         _usePlaceholder = false;
         current = CharacterState.idle;
-        _addMovementHitbox();
         return;
       }
 
@@ -158,7 +173,6 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
         };
         _usePlaceholder = false;
         current = CharacterState.idle;
-        _addMovementHitbox();
         return;
       }
 
@@ -197,7 +211,6 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
             };
             _usePlaceholder = false;
             current = CharacterState.idle;
-            _addMovementHitbox();
             return;
           }
 
@@ -265,38 +278,6 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     if (animations != null && animations!.isNotEmpty) {
       current = CharacterState.idle;
     }
-
-    _addMovementHitbox();
-  }
-
-  void _addMovementHitbox() {
-    if (_movementHitboxAdded) {
-      return;
-    }
-    _movementHitboxAdded = true;
-
-    add(
-      RectangleHitbox(
-        position: Vector2(size.x * 0.33, size.y * 0.74),
-        size: Vector2(size.x * 0.34, size.y * 0.18),
-        collisionType: CollisionType.active,
-      ),
-    );
-  }
-
-  @override
-  void onCollisionStart(
-    Set<Vector2> intersectionPoints,
-    PositionComponent other,
-  ) {
-    super.onCollisionStart(intersectionPoints, other);
-    if (other is Character) {
-      _handleCharacterCollision(other);
-      return;
-    }
-    if (other is Furniture) {
-      _handleFurnitureCollision(other);
-    }
   }
 
   @override
@@ -318,12 +299,20 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     final scale = layout.scale;
     final width = spriteSize.x * scale;
     final height = spriteSize.y * scale;
-    final rect = Rect.fromLTWH(
-      (size.x - width) / 2 + layout.offset.dx,
-      size.y - height + layout.offset.dy,
-      width,
-      height,
-    );
+    final rect =
+        _centerTaskSpriteOnPosition
+            ? Rect.fromLTWH(
+              anchor.x * size.x - width / 2 + layout.offset.dx,
+              anchor.y * size.y - height / 2 + layout.offset.dy,
+              width,
+              height,
+            )
+            : Rect.fromLTWH(
+              (size.x - width) / 2 + layout.offset.dx,
+              size.y - height + layout.offset.dy,
+              width,
+              height,
+            );
     sprite.renderRect(canvas, rect);
   }
 
@@ -333,7 +322,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
       return const _TaskSpriteLayout(scale: 0.58, offset: Offset.zero);
     }
 
-    final direction = seat.direction;
+    final direction = _effectiveSeatDirection;
     if (seat.type == SeatType.desk) {
       if (direction == 'left') {
         return const _TaskSpriteLayout(scale: 0.56, offset: Offset(-12, -18));
@@ -342,12 +331,15 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
         return const _TaskSpriteLayout(scale: 0.56, offset: Offset(12, -18));
       }
       if (direction == 'up') {
-        return const _TaskSpriteLayout(scale: 0.50, offset: Offset(0, -28));
+        return const _TaskSpriteLayout(scale: 0.52, offset: Offset(0, 0));
       }
       return const _TaskSpriteLayout(scale: 0.55, offset: Offset(0, -22));
     }
 
     if (seat.type == SeatType.meeting) {
+      if (_centerTaskSpriteOnPosition) {
+        return const _TaskSpriteLayout(scale: 0.105, offset: Offset.zero);
+      }
       if (direction == 'left') {
         return const _TaskSpriteLayout(scale: 0.54, offset: Offset(-10, -16));
       }
@@ -794,7 +786,6 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     );
 
     final idleDown = await loadSprite('idle/idle_down.png');
-    final idleUp = await loadSprite('idle/idle_up.png');
     final idleLeft = await loadSprite('idle/idle_left.png');
     final idleRight = await loadSprite('idle/idle_right.png');
     final sitDeskFront = await loadFirstAvailable([
@@ -804,6 +795,16 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     ]);
     final sitDeskLeft = await loadSprite('sit_desk/sit_desk_left.png');
     final sitDeskRight = await loadSprite('sit_desk/sit_desk_right.png');
+    final sitSofaUp = await loadFirstAvailable([
+      'sofa_states/sit_sofa_up.png',
+      'sit_desk/sit_desk_front.png',
+      'sit_desk/sit_desk_right.png',
+      'sit_desk/sit_desk_left.png',
+    ]);
+    final sitSofaFront = await loadFirstAvailable([
+      'sofa_states/sit_sofa_front.png',
+      'sit_desk/sit_desk_front.png',
+    ]);
     final talkUp = await loadSprite('meeting_states/talk_up.png');
 
     const double scale = 1.05;
@@ -831,21 +832,23 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     animations = {
       CharacterState.walk: _walkAnimations[GameConstants.rowWalkDown]!,
       CharacterState.idle: SpriteAnimation.spriteList([idleDown], stepTime: 1),
-      CharacterState.work: SpriteAnimation.spriteList([idleUp], stepTime: 1),
+      CharacterState.work: SpriteAnimation.spriteList([
+        sitDeskFront,
+      ], stepTime: 1),
       CharacterState.rest: SpriteAnimation.spriteList([idleRight], stepTime: 1),
       CharacterState.meeting: SpriteAnimation.spriteList([
         idleLeft,
       ], stepTime: 1),
     };
 
-    _taskSprites[CharacterState.work] = sitDeskFront;
+    _taskSprites[CharacterState.work] = sitSofaUp;
     _taskSprites[CharacterState.meeting] = talkUp;
-    _taskSprites[CharacterState.rest] = sitDeskFront;
+    _taskSprites[CharacterState.rest] = sitSofaFront;
 
     // Preload directional seated variants for fast seat-direction switching.
-    if (currentSeat?.direction == 'left') {
+    if (_effectiveSeatDirection == 'left') {
       _taskSprites[CharacterState.work] = sitDeskLeft;
-    } else if (currentSeat?.direction == 'right') {
+    } else if (_effectiveSeatDirection == 'right') {
       _taskSprites[CharacterState.work] = sitDeskRight;
     }
   }
@@ -895,27 +898,27 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
 
       final direction = targetPosition! - position;
       final distance = direction.length;
+      _trackMovementProgress(distance, dt);
 
       if (distance < 2.0) {
         position = targetPosition!.clone();
+        _resetMovementProgress();
         if (_routeQueue.isNotEmpty) {
           targetPosition = _routeQueue.removeAt(0);
           current = CharacterState.walk;
         } else {
-          final snapPosition = _snapArrivalPosition;
-          if (snapPosition != null) {
-            position = snapPosition.clone();
+          if (_continueToSeatBeforeStateChange()) {
+            return;
           }
           targetPosition = null;
           _routeDestination = null;
-          _snapArrivalPosition = null;
           current = nextState;
           _alignFacingToSeat();
         }
       } else {
-        _previousPosition.setFrom(position);
         final velocity = direction.normalized() * GameConstants.walkSpeed;
-        position += velocity * dt;
+        final stepDistance = math.min(GameConstants.walkSpeed * dt, distance);
+        position += direction.normalized() * stepDistance;
         _clampToSceneBounds();
         current = CharacterState.walk;
         _facing = velocity.normalized();
@@ -952,7 +955,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
   }
 
   void _alignFacingToSeat() {
-    switch (currentSeat?.direction) {
+    switch (_effectiveSeatDirection) {
       case 'left':
         _facing = Vector2(-1, 0);
         _applySeatTaskSpriteVariant();
@@ -973,10 +976,6 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     }
   }
 
-  Future<void> _setTaskSprite(CharacterState state, String relativePath) async {
-    await _setTaskSpriteFromCandidates(state, [relativePath]);
-  }
-
   Future<void> _setTaskSpriteFromCandidates(
     CharacterState state,
     List<String> relativePaths,
@@ -990,6 +989,9 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
           '$motionAtlasBasePath/$relativePath',
         );
         _taskSprites[state] = Sprite(image);
+        _centerTaskSpriteOnPosition =
+            state == CharacterState.meeting &&
+            relativePath.startsWith('meeting_seated/');
         return;
       } catch (_) {
         continue;
@@ -1002,7 +1004,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
       return;
     }
 
-    final direction = currentSeat!.direction;
+    final direction = _effectiveSeatDirection;
     if (currentSeat!.type == SeatType.desk) {
       final paths =
           direction == 'left'
@@ -1010,7 +1012,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
               : direction == 'right'
               ? ['sit_desk/sit_desk_right.png']
               : direction == 'up'
-              ? ['idle/idle_up.png']
+              ? ['sofa_states/sit_sofa_up.png', 'sit_desk/sit_desk_front.png']
               : [
                 'sit_desk/sit_desk_front.png',
                 'sit_desk/sit_desk_right.png',
@@ -1023,12 +1025,16 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     if (currentSeat!.type == SeatType.sofa) {
       final paths =
           direction == 'left'
-              ? ['sit_desk/sit_desk_left.png']
+              ? ['sofa_states/sit_sofa_left.png', 'sit_desk/sit_desk_left.png']
               : direction == 'right'
-              ? ['sit_desk/sit_desk_right.png']
+              ? [
+                'sofa_states/sit_sofa_right.png',
+                'sit_desk/sit_desk_right.png',
+              ]
               : direction == 'up'
-              ? ['sit_desk/sit_desk_front.png']
+              ? ['sofa_states/sit_sofa_up.png', 'sit_desk/sit_desk_front.png']
               : [
+                'sofa_states/sit_sofa_front.png',
                 'sit_desk/sit_desk_front.png',
                 'sit_desk/sit_desk_left.png',
                 'sit_desk/sit_desk_right.png',
@@ -1038,13 +1044,30 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     }
 
     if (currentSeat!.type == SeatType.meeting) {
-      final path =
+      final directionKey =
+          direction == 'left'
+              ? 'left'
+              : direction == 'right'
+              ? 'right'
+              : direction == 'down'
+              ? 'down'
+              : 'up';
+      final fallbackPath =
           direction == 'left'
               ? 'meeting_states/talk_left.png'
               : direction == 'right'
               ? 'meeting_states/talk_right.png'
+              : direction == 'down'
+              ? 'sit_desk/sit_desk_front.png'
               : 'meeting_states/talk_up.png';
-      _setTaskSprite(CharacterState.meeting, path);
+      _setTaskSpriteFromCandidates(CharacterState.meeting, [
+        'meeting_seated/meeting_seated_$directionKey.png',
+        'meeting_seated/meeting_seated_up.png',
+        'meeting_seated/meeting_seated_down.png',
+        'meeting_seated/meeting_seated_left.png',
+        'meeting_seated/meeting_seated_right.png',
+        fallbackPath,
+      ]);
     }
   }
 
@@ -1069,18 +1092,141 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
 
   void moveTo(Vector2 target, CharacterState onArrival) {
     _moveOutOfNavigationObstacle(target);
-    _routeQueue.clear();
-    _snapArrivalPosition = null;
     _routeDestination = target.clone();
-    final route = _buildRoute(position, target);
-    targetPosition = route.removeAt(0);
-    _routeQueue.addAll(route);
+    final route = _buildPlannedRoute(position, target);
+    _applyRoute(route);
     nextState = onArrival;
     _movementBlockRemaining = 0;
     current = CharacterState.walk;
   }
 
-  bool assignTask(CharacterTask task, Seat seat, {bool force = false}) {
+  void followCustomRoute(List<Vector2> waypoints, CharacterState onArrival) {
+    final route =
+        waypoints
+            .where((point) => point.x.isFinite && point.y.isFinite)
+            .map((point) => point.clone())
+            .toList();
+    if (route.isEmpty) {
+      return;
+    }
+
+    cancelCurrentTask();
+    _moveOutOfNavigationObstacle(route.last);
+    _routeDestination = route.last.clone();
+    _applyRoute(_dedupeRoute(route));
+    nextState = onArrival;
+    _movementBlockRemaining = 0;
+    current = CharacterState.walk;
+  }
+
+  bool followCustomRouteToSeat(
+    List<Vector2> waypoints,
+    CharacterTask task,
+    Seat seat, {
+    bool force = true,
+    Vector2? targetPositionOverride,
+    String? targetDirectionOverride,
+  }) {
+    if (!force && !readyForAssignment) {
+      return false;
+    }
+
+    final route =
+        waypoints
+            .where((point) => point.x.isFinite && point.y.isFinite)
+            .map((point) => point.clone())
+            .toList();
+    if (route.isEmpty) {
+      return false;
+    }
+
+    if (force) {
+      cancelCurrentTask();
+    }
+    if (!seat.tryReserve(this)) {
+      return false;
+    }
+
+    currentSeat?.release(this);
+    currentSeat = seat;
+    _seatPositionOverride = targetPositionOverride?.clone();
+    _seatDirectionOverride = targetDirectionOverride;
+    _activeTask = task;
+    taskDuration = task.duration;
+    _taskTimer = 0;
+    _idleCooldownRemaining = 0;
+
+    final destination = _seatTravelDestination(seat);
+    if (route.last.distanceTo(destination) > 2.0) {
+      route.add(destination.clone());
+    }
+
+    _moveOutOfNavigationObstacle(seat.position);
+    _routeDestination = destination.clone();
+    _applyRoute(_dedupeRoute(route));
+    nextState = task.targetState;
+    _movementBlockRemaining = 0;
+    current = CharacterState.walk;
+    return true;
+  }
+
+  bool followCustomRouteToIdleSeat(
+    List<Vector2> waypoints,
+    Seat seat, {
+    bool force = false,
+    Vector2? targetPositionOverride,
+    String? targetDirectionOverride,
+  }) {
+    if (!force && !readyForAssignment) {
+      return false;
+    }
+
+    final route =
+        waypoints
+            .where((point) => point.x.isFinite && point.y.isFinite)
+            .map((point) => point.clone())
+            .toList();
+    if (route.isEmpty) {
+      return false;
+    }
+
+    if (force) {
+      cancelCurrentTask();
+    }
+    if (!seat.tryReserve(this)) {
+      return false;
+    }
+
+    currentSeat?.release(this);
+    currentSeat = seat;
+    _seatPositionOverride = targetPositionOverride?.clone();
+    _seatDirectionOverride = targetDirectionOverride;
+    _activeTask = null;
+    taskDuration = 0;
+    _taskTimer = 0;
+    _idleCooldownRemaining = 0;
+
+    final destination = _seatTravelDestination(seat);
+    if (route.last.distanceTo(destination) > 2.0) {
+      route.add(destination.clone());
+    }
+
+    _moveOutOfNavigationObstacle(seat.position);
+    _routeDestination = destination.clone();
+    _applyRoute(_dedupeRoute(route));
+    nextState = CharacterState.rest;
+    _movementBlockRemaining = 0;
+    current = CharacterState.walk;
+    return true;
+  }
+
+  bool assignTask(
+    CharacterTask task,
+    Seat seat, {
+    bool force = false,
+    Vector2? targetPositionOverride,
+    String? targetDirectionOverride,
+  }) {
     if (!force && !readyForAssignment) {
       return false;
     }
@@ -1092,12 +1238,99 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     }
     currentSeat?.release(this);
     currentSeat = seat;
+    _seatPositionOverride = targetPositionOverride?.clone();
+    _seatDirectionOverride = targetDirectionOverride;
     _activeTask = task;
     taskDuration = task.duration;
     _taskTimer = 0;
     _idleCooldownRemaining = 0;
     _moveToSeat(seat, task.targetState);
     return true;
+  }
+
+  bool assignIdleSeat(
+    Seat seat, {
+    bool force = false,
+    Vector2? targetPositionOverride,
+    String? targetDirectionOverride,
+  }) {
+    if (!force && !readyForAssignment) {
+      return false;
+    }
+    if (force) {
+      cancelCurrentTask();
+    }
+    if (!seat.tryReserve(this)) {
+      return false;
+    }
+    currentSeat?.release(this);
+    currentSeat = seat;
+    _seatPositionOverride = targetPositionOverride?.clone();
+    _seatDirectionOverride = targetDirectionOverride;
+    _activeTask = null;
+    taskDuration = 0;
+    _taskTimer = 0;
+    _idleCooldownRemaining = 0;
+    _moveToSeat(seat, CharacterState.rest);
+    return true;
+  }
+
+  void forcePlaceAt(Vector2 target) {
+    targetPosition = null;
+    _routeDestination = null;
+    _routeQueue.clear();
+    _activeTask = null;
+    taskDuration = 0;
+    _taskTimer = 0;
+    _idleCooldownRemaining = 0;
+    currentSeat?.release(this);
+    currentSeat = null;
+    _seatPositionOverride = null;
+    _seatDirectionOverride = null;
+    _centerTaskSpriteOnPosition = false;
+    position.setFrom(target);
+    _clampToSceneBounds();
+    _resetMovementProgress();
+    if (animations != null && current != null) {
+      current = CharacterState.idle;
+    }
+  }
+
+  void forcePlaceAtState(
+    CharacterState state,
+    Vector2 target, {
+    String? direction,
+  }) {
+    forcePlaceAt(target);
+    final seatType = _seatTypeForState(state);
+    if (seatType == null) {
+      return;
+    }
+    currentSeat = Seat(
+      position: position.clone(),
+      type: seatType,
+      direction: direction,
+    );
+    _seatPositionOverride = position.clone();
+    _seatDirectionOverride = direction;
+    _centerTaskSpriteOnPosition = state == CharacterState.meeting;
+    current = state;
+    nextState = state;
+    _alignFacingToSeat();
+  }
+
+  SeatType? _seatTypeForState(CharacterState state) {
+    switch (state) {
+      case CharacterState.work:
+        return SeatType.desk;
+      case CharacterState.meeting:
+        return SeatType.meeting;
+      case CharacterState.rest:
+        return SeatType.sofa;
+      case CharacterState.walk:
+      case CharacterState.idle:
+        return null;
+    }
   }
 
   void idleFor(double duration) {
@@ -1114,17 +1347,19 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     _taskTimer = 0;
     targetPosition = null;
     _routeDestination = null;
-    _snapArrivalPosition = null;
+    _seatPositionOverride = null;
+    _seatDirectionOverride = null;
     _routeQueue.clear();
     nextState = CharacterState.idle;
     current = CharacterState.idle;
     currentSeat?.release(this);
     currentSeat = null;
+    _seatPositionOverride = null;
+    _seatDirectionOverride = null;
   }
 
   void _finishTask() {
-    _standUpFromSeat();
-    current = CharacterState.idle;
+    final exitStart = _standUpFromSeat();
     _activeTask = null;
     taskDuration = 0;
     _taskTimer = 0;
@@ -1133,100 +1368,41 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
 
     currentSeat?.release(this);
     currentSeat = null;
-  }
 
-  void _handleCharacterCollision(Character other) {
-    if (!isMoving || identical(other, this) || currentSeat != null) {
-      return;
+    final exitRoute =
+        exitStart == null ? null : exitRouteBuilder?.call(position);
+    if (exitRoute != null && exitRoute.isNotEmpty) {
+      final route =
+          exitRoute
+              .where((point) => point.x.isFinite && point.y.isFinite)
+              .map((point) => point.clone())
+              .toList();
+      if (route.isNotEmpty) {
+        _routeDestination = route.last.clone();
+        _applyRoute(_dedupeRoute(route));
+        nextState = CharacterState.idle;
+        _movementBlockRemaining = 0;
+        current = CharacterState.walk;
+        return;
+      }
     }
 
-    position.setFrom(_previousPosition);
-    _clampToSceneBounds();
-    _movementBlockRemaining = 0.10 + (name.hashCode.abs() % 5) * 0.03;
-
-    if (current == CharacterState.walk) {
-      current = CharacterState.idle;
-    }
-  }
-
-  void _handleFurnitureCollision(Furniture furniture) {
-    if (!isMoving) {
-      return;
-    }
-
-    final seat = currentSeat;
-    if (_canPassThroughAssignedFurniture(furniture, seat)) {
-      return;
-    }
-
-    position.setFrom(_previousPosition);
-    _clampToSceneBounds();
-
-    if (_rerouteAroundFurniture(furniture)) {
-      _movementBlockRemaining = 0;
-      current = CharacterState.walk;
-      return;
-    }
-
-    _movementBlockRemaining = 0.08;
-
-    if (current == CharacterState.walk) {
-      current = CharacterState.idle;
-    }
-  }
-
-  bool _canPassThroughAssignedFurniture(Furniture furniture, Seat? seat) {
-    if (seat == null || seat.obstacleId != furniture.obstacleId) {
-      return false;
-    }
-
-    return current == CharacterState.walk && targetPosition != null;
-  }
-
-  bool _rerouteAroundFurniture(Furniture furniture) {
-    final destination = _routeDestination ?? targetPosition;
-    if (destination == null) {
-      return false;
-    }
-
-    final ignoredObstacleIds = <String>{
-      if (currentSeat?.obstacleId != null) currentSeat!.obstacleId!,
-    };
-    final route = _buildRoute(
-      position,
-      destination,
-      priority: furniture,
-      ignoredObstacleIds: ignoredObstacleIds,
-    );
-    if (route.isEmpty) {
-      return false;
-    }
-
-    _routeQueue
-      ..clear()
-      ..addAll(route.skip(1));
-    targetPosition = route.first;
-    return true;
+    current = CharacterState.idle;
   }
 
   void _moveToSeat(Seat seat, CharacterState onArrival) {
     _moveOutOfNavigationObstacle(seat.position);
-    _routeQueue.clear();
-    final furniture = _furnitureForSeat(seat);
-    final walkTarget = furniture?.approachPointForSeat(seat) ?? seat.position;
-
-    _snapArrivalPosition = seat.position.clone();
-    _routeDestination = walkTarget.clone();
-    final route = _buildRoute(
-      position,
-      walkTarget,
-      ignoredObstacleIds: {if (seat.obstacleId != null) seat.obstacleId!},
-    );
-    targetPosition = route.removeAt(0);
-    _routeQueue.addAll(route);
+    final destination = _seatTravelDestination(seat);
+    _routeDestination = destination.clone();
+    final route = _buildPlannedRoute(position, destination);
+    _applyRoute(route);
     nextState = onArrival;
     _movementBlockRemaining = 0;
     current = CharacterState.walk;
+  }
+
+  Vector2 _seatTravelDestination(Seat seat) {
+    return _finalSeatPosition(seat);
   }
 
   Furniture? _furnitureForSeat(Seat seat) {
@@ -1243,47 +1419,186 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     return null;
   }
 
-  void _standUpFromSeat() {
+  bool _continueToSeatBeforeStateChange() {
+    final seat = currentSeat;
+    if (seat == null || nextState == CharacterState.idle) {
+      return false;
+    }
+
+    final finalSeatPosition = _finalSeatPosition(seat);
+    if (position.distanceTo(finalSeatPosition) <= _seatArrivalTolerance) {
+      return false;
+    }
+
+    targetPosition = finalSeatPosition;
+    _routeDestination = finalSeatPosition.clone();
+    _resetMovementProgress();
+    current = CharacterState.walk;
+    return true;
+  }
+
+  Vector2 _finalSeatPosition(Seat seat) {
+    return _seatPositionOverride?.clone() ?? seat.position.clone();
+  }
+
+  Vector2? _standUpFromSeat() {
     final seat = currentSeat;
     if (seat == null) {
-      return;
+      return null;
     }
 
     final furniture = _furnitureForSeat(seat);
     final standPoint = furniture?.approachPointForSeat(seat);
     if (standPoint == null) {
-      return;
+      return null;
     }
 
-    position.setFrom(standPoint);
-    _clampToSceneBounds();
+    return standPoint.clone();
   }
 
-  void _moveOutOfNavigationObstacle(Vector2 destination) {
-    for (final furniture in game.world.children.whereType<Furniture>()) {
-      final rect = furniture.navigationWorldRect();
-      if (!rect.contains(Offset(position.x, position.y))) {
+  void _moveOutOfNavigationObstacle(Vector2 destination) {}
+
+  List<Vector2> _buildPlannedRoute(
+    Vector2 start,
+    Vector2 destination, {
+    Furniture? priority,
+    Set<String> ignoredObstacleIds = const {},
+  }) {
+    final highLevelPoints = _trafficPlanPoints(start, destination);
+    final route = <Vector2>[];
+    var current = start.clone();
+
+    for (final point in highLevelPoints) {
+      if (current.distanceTo(point) < 2.0) {
         continue;
       }
+      final segment = _buildRoute(
+        current,
+        point,
+        priority: priority,
+        ignoredObstacleIds: ignoredObstacleIds,
+      );
+      route.addAll(segment);
+      current = point.clone();
+    }
 
-      position.setFrom(_exitPointFromRect(position, destination, rect));
-      _clampToSceneBounds();
+    return route.isEmpty ? [destination.clone()] : route;
+  }
+
+  List<Vector2> _dedupeRoute(List<Vector2> route) {
+    final result = <Vector2>[];
+    for (final point in route) {
+      if (result.isNotEmpty && result.last.distanceTo(point) < 2.0) {
+        continue;
+      }
+      result.add(point.clone());
+    }
+    return result;
+  }
+
+  List<Vector2> _trafficPlanPoints(Vector2 start, Vector2 destination) {
+    final points = <Vector2>[];
+    final shouldUseLane =
+        (start.x - destination.x).abs() > 180 ||
+        (start.y - destination.y).abs() > 220;
+    if (shouldUseLane) {
+      final laneY = _trafficLaneY;
+      final startCorridorX = _corridorXFor(start);
+      final destinationCorridorX = _corridorXFor(destination);
+      points
+        ..add(Vector2(startCorridorX, start.y))
+        ..add(Vector2(startCorridorX, laneY))
+        ..add(Vector2(destinationCorridorX, laneY))
+        ..add(Vector2(destinationCorridorX, destination.y));
+    }
+    points.add(destination.clone());
+    return _dedupeRoute(points);
+  }
+
+  double _corridorXFor(Vector2 point) {
+    if (point.x < 610.0) {
+      return 590.0;
+    }
+    if (point.x > 1040.0) {
+      return 1035.0;
+    }
+    return point.x < 820.0 ? 590.0 : 1035.0;
+  }
+
+  double get _trafficLaneY {
+    final sceneHeight = OfficeSceneConfig.sceneSize.y;
+    final lane = switch (name) {
+      '程序员' => 820.0,
+      '设计师' => 860.0,
+      '项目经理' => 900.0,
+      '测试' => 940.0,
+      '运营' => 780.0,
+      _ =>
+        820.0 +
+            (name.codeUnits.fold<int>(0, (sum, unit) => sum + unit) % 5) * 40.0,
+    };
+    return lane.clamp(height + 8.0, sceneHeight - 24.0);
+  }
+
+  void _applyRoute(List<Vector2> route) {
+    _routeQueue.clear();
+    final normalized =
+        route.where((point) => position.distanceTo(point) >= 2.0).toList();
+    if (normalized.isEmpty) {
+      targetPosition = _routeDestination?.clone();
+      if (targetPosition == null) {
+        return;
+      }
+    } else {
+      targetPosition = normalized.removeAt(0);
+      _routeQueue.addAll(normalized);
+    }
+    _resetMovementProgress();
+  }
+
+  void _trackMovementProgress(double distance, double dt) {
+    final target = targetPosition;
+    if (target == null) {
+      _resetMovementProgress();
       return;
+    }
+
+    if (_movementWatchTarget == null ||
+        _movementWatchTarget!.distanceTo(target) > 0.5) {
+      _movementWatchTarget = target.clone();
+      _movementBestDistance = distance;
+      _movementNoProgressTime = 0;
+      _movementStillTime = 0;
+      _movementLastPosition.setFrom(position);
+      return;
+    }
+
+    final movedDistance = position.distanceTo(_movementLastPosition);
+    if (movedDistance < 0.35) {
+      _movementStillTime += dt;
+    } else {
+      _movementStillTime = 0;
+      _movementLastPosition.setFrom(position);
+    }
+
+    if (distance < _movementBestDistance - 0.75) {
+      _movementBestDistance = distance;
+      _movementNoProgressTime = 0;
+    } else {
+      _movementNoProgressTime += dt;
+    }
+
+    if (_movementNoProgressTime >= 1.2 || _movementStillTime >= 0.45) {
+      _resetMovementProgress();
     }
   }
 
-  Vector2 _exitPointFromRect(Vector2 point, Vector2 destination, Rect rect) {
-    const double gap = 30.0;
-    final dx = destination.x - point.x;
-    final dy = destination.y - point.y;
-
-    if (dx.abs() > dy.abs()) {
-      final x = dx >= 0 ? rect.right + gap : rect.left - gap;
-      return Vector2(x, point.y.clamp(rect.top - gap, rect.bottom + gap));
-    }
-
-    final y = dy >= 0 ? rect.bottom + gap : rect.top - gap;
-    return Vector2(point.x.clamp(rect.left - gap, rect.right + gap), y);
+  void _resetMovementProgress() {
+    _movementWatchTarget = null;
+    _movementBestDistance = double.infinity;
+    _movementNoProgressTime = 0;
+    _movementStillTime = 0;
+    _movementLastPosition.setFrom(position);
   }
 
   List<Vector2> _buildRoute(
@@ -1292,194 +1607,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     Furniture? priority,
     Set<String> ignoredObstacleIds = const {},
   }) {
-    final furniture = game.world.children.whereType<Furniture>().toList();
-    final route = <Vector2>[];
-    final avoided = <String>{};
-    var current = start.clone();
-
-    for (var i = 0; i < 8; i++) {
-      final blocker = _firstBlockingFurniture(
-        current,
-        destination,
-        furniture,
-        avoided,
-        priority: i == 0 ? priority : null,
-        ignoredObstacleIds: ignoredObstacleIds,
-      );
-      if (blocker == null) {
-        route.add(destination.clone());
-        return route;
-      }
-
-      avoided.add(blocker.obstacleId);
-      final detour = _detourAround(blocker, current, destination);
-      if (detour.isEmpty) {
-        route.add(destination.clone());
-        return route;
-      }
-
-      route.addAll(detour);
-      current = detour.last;
-    }
-
-    route.add(destination.clone());
-    return route;
-  }
-
-  Furniture? _firstBlockingFurniture(
-    Vector2 start,
-    Vector2 destination,
-    List<Furniture> furniture,
-    Set<String> avoided, {
-    Furniture? priority,
-    Set<String> ignoredObstacleIds = const {},
-  }) {
-    final ordered = [
-      if (priority != null) priority,
-      ...furniture.where((item) => item != priority),
-    ];
-
-    Furniture? closest;
-    var closestDistance = double.infinity;
-    for (final item in ordered) {
-      if (avoided.contains(item.obstacleId) ||
-          ignoredObstacleIds.contains(item.obstacleId)) {
-        continue;
-      }
-
-      final rect = item.navigationWorldRect().inflate(_pathPadding);
-      if (!_segmentIntersectsRect(start, destination, rect)) {
-        continue;
-      }
-
-      final center = Vector2(rect.center.dx, rect.center.dy);
-      final distance = start.distanceTo(center);
-      if (item == priority) {
-        return item;
-      }
-      if (distance < closestDistance) {
-        closest = item;
-        closestDistance = distance;
-      }
-    }
-
-    return closest;
-  }
-
-  List<Vector2> _detourAround(
-    Furniture furniture,
-    Vector2 start,
-    Vector2 destination,
-  ) {
-    final rect = furniture.navigationWorldRect().inflate(_pathPadding);
-    final corners = [
-      Vector2(rect.left, rect.top),
-      Vector2(rect.right, rect.top),
-      Vector2(rect.right, rect.bottom),
-      Vector2(rect.left, rect.bottom),
-    ];
-    final candidates = <List<Vector2>>[
-      [corners[0], corners[1]],
-      [corners[1], corners[0]],
-      [corners[3], corners[2]],
-      [corners[2], corners[3]],
-      [corners[0], corners[3]],
-      [corners[3], corners[0]],
-      [corners[1], corners[2]],
-      [corners[2], corners[1]],
-    ];
-
-    List<Vector2>? best;
-    var bestLength = double.infinity;
-    final blockingRect = furniture.navigationWorldRect().inflate(12);
-    for (final candidate in candidates) {
-      if (!_routeAvoidsRect(start, candidate, destination, blockingRect)) {
-        continue;
-      }
-      final length = _routeLength(start, candidate, destination);
-      if (length < bestLength) {
-        best = candidate;
-        bestLength = length;
-      }
-    }
-
-    return best ?? const [];
-  }
-
-  bool _routeAvoidsRect(
-    Vector2 start,
-    List<Vector2> waypoints,
-    Vector2 destination,
-    Rect rect,
-  ) {
-    var current = start;
-    for (final waypoint in waypoints) {
-      if (_segmentIntersectsRect(current, waypoint, rect)) {
-        return false;
-      }
-      current = waypoint;
-    }
-    return !_segmentIntersectsRect(current, destination, rect);
-  }
-
-  double _routeLength(
-    Vector2 start,
-    List<Vector2> waypoints,
-    Vector2 destination,
-  ) {
-    var total = 0.0;
-    var current = start;
-    for (final waypoint in waypoints) {
-      total += current.distanceTo(waypoint);
-      current = waypoint;
-    }
-    total += current.distanceTo(destination);
-    return total;
-  }
-
-  bool _segmentIntersectsRect(Vector2 start, Vector2 end, Rect rect) {
-    final startOffset = Offset(start.x, start.y);
-    final endOffset = Offset(end.x, end.y);
-    if (rect.contains(startOffset) || rect.contains(endOffset)) {
-      return true;
-    }
-
-    return _segmentsIntersect(
-          startOffset,
-          endOffset,
-          rect.topLeft,
-          rect.topRight,
-        ) ||
-        _segmentsIntersect(
-          startOffset,
-          endOffset,
-          rect.topRight,
-          rect.bottomRight,
-        ) ||
-        _segmentsIntersect(
-          startOffset,
-          endOffset,
-          rect.bottomRight,
-          rect.bottomLeft,
-        ) ||
-        _segmentsIntersect(
-          startOffset,
-          endOffset,
-          rect.bottomLeft,
-          rect.topLeft,
-        );
-  }
-
-  bool _segmentsIntersect(Offset a, Offset b, Offset c, Offset d) {
-    final d1 = _cross(a, b, c);
-    final d2 = _cross(a, b, d);
-    final d3 = _cross(c, d, a);
-    final d4 = _cross(c, d, b);
-    return d1 * d2 <= 0 && d3 * d4 <= 0;
-  }
-
-  double _cross(Offset a, Offset b, Offset c) {
-    return (b.dx - a.dx) * (c.dy - a.dy) - (b.dy - a.dy) * (c.dx - a.dx);
+    return [destination.clone()];
   }
 
   void _clampToSceneBounds() {
@@ -1489,7 +1617,7 @@ class Character extends SpriteAnimationGroupComponent<CharacterState>
     y = y.clamp(height, sceneSize.y);
   }
 
-  static const double _pathPadding = 34.0;
+  static const double _seatArrivalTolerance = 4.0;
 }
 
 enum _CharacterRole { lead, reviewer, imageMaker, designer, programmer }

@@ -1,9 +1,9 @@
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../core/asset_catalog.dart';
+import '../core/enums.dart';
 import '../core/seat.dart';
 import '../core/style_guide.dart';
 
@@ -60,18 +60,14 @@ class Furniture extends PositionComponent with HasGameReference<FlameGame> {
     } catch (_) {
       // Placeholder for furniture
     }
-
-    add(
-      RectangleHitbox(
-        position: _collisionPosition(),
-        size: _collisionSize(),
-        collisionType: CollisionType.passive,
-      ),
-    );
   }
 
   @override
   void render(Canvas canvas) {
+    if (_isOccupiedMeetingSeat) {
+      return;
+    }
+
     // Draw shadow
     _drawShadow(canvas);
 
@@ -201,24 +197,13 @@ class Furniture extends PositionComponent with HasGameReference<FlameGame> {
     );
   }
 
-  Vector2 _collisionPosition() {
-    final collisionSize = _collisionSize();
-    return Vector2((size.x - collisionSize.x) / 2, size.y - collisionSize.y);
-  }
-
   Rect collisionWorldRect() {
-    final localPosition = _collisionPosition();
-    final collisionSize = _collisionSize();
+    final rect = _collisionRectLocal();
     final topLeft = Offset(
-      x - size.x / 2 + localPosition.x,
-      y - size.y / 2 + localPosition.y,
+      x - size.x / 2 + rect.left,
+      y - size.y / 2 + rect.top,
     );
-    return Rect.fromLTWH(
-      topLeft.dx,
-      topLeft.dy,
-      collisionSize.x,
-      collisionSize.y,
-    );
+    return Rect.fromLTWH(topLeft.dx, topLeft.dy, rect.width, rect.height);
   }
 
   Rect navigationWorldRect() {
@@ -228,8 +213,8 @@ class Furniture extends PositionComponent with HasGameReference<FlameGame> {
       height: size.y,
     );
 
-    if (spritePath.contains('desk_chair')) {
-      return visualRect.deflate(4);
+    if (_isDeskChair) {
+      return _deskChairNavigationWorldRect(visualRect);
     }
     if (spritePath.contains('meeting_table')) {
       return visualRect.deflate(8);
@@ -243,7 +228,25 @@ class Furniture extends PositionComponent with HasGameReference<FlameGame> {
     return collisionWorldRect();
   }
 
+  bool get allowsAssignedSeatPassThrough =>
+      _isStandaloneChair && !spritePath.contains('sofa');
+
+  bool get shouldOccludeSeatedCharacters =>
+      _isStandaloneChair && !spritePath.contains('sofa');
+
+  bool get _isOccupiedMeetingSeat => seats.any((seat) {
+    final user = seat.user;
+    return seat.type == SeatType.meeting &&
+        user != null &&
+        !user.isMoving &&
+        user.current == CharacterState.meeting;
+  });
+
   Vector2 approachPointForSeat(Seat seat) {
+    if (seat.type == SeatType.sofa) {
+      return seat.position.clone();
+    }
+
     final rect = navigationWorldRect();
     const double gap = 44.0;
 
@@ -263,16 +266,84 @@ class Furniture extends PositionComponent with HasGameReference<FlameGame> {
     return seat.position.clone();
   }
 
-  Vector2 _collisionSize() {
+  Rect _collisionRectLocal() {
+    if (_isDeskChair) {
+      final seatBottom = _lowestSeatLocalY + _deskChairSeatForwardDepth;
+      final bottom = math.max(size.y, seatBottom);
+      return Rect.fromLTRB(size.x * 0.12, size.y * 0.42, size.x * 0.88, bottom);
+    }
+    if (_isStandaloneChair) {
+      return Rect.fromLTWH(
+        size.x * 0.14,
+        size.y * 0.18,
+        size.x * 0.72,
+        size.y * 0.74,
+      );
+    }
     if (spritePath.contains('desk')) {
-      return Vector2(size.x * 0.82, size.y * 0.24);
+      return Rect.fromLTWH(
+        size.x * 0.09,
+        size.y * 0.76,
+        size.x * 0.82,
+        size.y * 0.24,
+      );
     }
     if (spritePath.contains('sofa')) {
-      return Vector2(size.x * 0.88, size.y * 0.34);
+      return Rect.fromLTWH(
+        size.x * 0.06,
+        size.y * 0.66,
+        size.x * 0.88,
+        size.y * 0.34,
+      );
     }
     if (spritePath.contains('table')) {
-      return Vector2(size.x * 0.86, size.y * 0.42);
+      return Rect.fromLTWH(
+        size.x * 0.07,
+        size.y * 0.58,
+        size.x * 0.86,
+        size.y * 0.42,
+      );
     }
-    return Vector2(size.x * 0.8, size.y * 0.3);
+    return Rect.fromLTWH(
+      size.x * 0.1,
+      size.y * 0.7,
+      size.x * 0.8,
+      size.y * 0.3,
+    );
   }
+
+  Rect _deskChairNavigationWorldRect(Rect visualRect) {
+    if (seats.isEmpty) {
+      return visualRect.deflate(4);
+    }
+
+    final seatLeft = seats.map((seat) => seat.position.x).reduce(math.min);
+    final seatRight = seats.map((seat) => seat.position.x).reduce(math.max);
+    final seatBottom =
+        seats.map((seat) => seat.position.y).reduce(math.max) +
+        _deskChairSeatForwardDepth;
+
+    return Rect.fromLTRB(
+      math.min(visualRect.left + 4, seatLeft - _deskChairSeatHalfWidth),
+      visualRect.top + 4,
+      math.max(visualRect.right - 4, seatRight + _deskChairSeatHalfWidth),
+      math.max(visualRect.bottom - 4, seatBottom),
+    );
+  }
+
+  double get _lowestSeatLocalY {
+    if (seats.isEmpty) {
+      return size.y;
+    }
+
+    final localTop = y - size.y / 2;
+    return seats.map((seat) => seat.position.y - localTop).reduce(math.max);
+  }
+
+  bool get _isDeskChair => spritePath.contains('desk_chair');
+  bool get _isStandaloneChair =>
+      spritePath.contains('chair') && !spritePath.contains('desk_chair');
+
+  static const double _deskChairSeatHalfWidth = 52.0;
+  static const double _deskChairSeatForwardDepth = 112.0;
 }

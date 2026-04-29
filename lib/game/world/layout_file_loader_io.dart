@@ -23,6 +23,24 @@ Future<String?> tryLoadProjectAsset(String assetPath) async {
   return file.readAsString();
 }
 
+Future<bool> trySaveProjectAsset(String assetPath, String content) async {
+  if (kReleaseMode) {
+    return false;
+  }
+  if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    return false;
+  }
+
+  final root = _findProjectRoot();
+  if (root == null) {
+    return false;
+  }
+
+  final file = File('${root.path}${Platform.pathSeparator}$assetPath');
+  await file.writeAsString(content);
+  return true;
+}
+
 Directory? _findProjectRoot() {
   var current = Directory.current.absolute;
   while (true) {

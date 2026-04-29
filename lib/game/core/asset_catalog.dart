@@ -59,6 +59,10 @@ class GameAssetCatalog {
     return const [];
   }
 
+  bool hasAsset(String path) {
+    return _availableAssets.isEmpty || _availableAssets.contains(path);
+  }
+
   void _fillMap({
     required Object? source,
     required Map<String, String> target,

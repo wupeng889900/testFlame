@@ -26,7 +26,7 @@
       "position": { "x": 260, "y": 335 },
       "size": { "x": 160, "y": 186 },
       "seats": [
-        { "position": { "x": 260, "y": 392 }, "direction": "up" }
+        { "position": { "x": 260, "y": 418 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     },
@@ -35,7 +35,7 @@
       "position": { "x": 445, "y": 335 },
       "size": { "x": 160, "y": 188 },
       "seats": [
-        { "position": { "x": 445, "y": 392 }, "direction": "up" }
+        { "position": { "x": 445, "y": 418 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     },
@@ -44,7 +44,7 @@
       "position": { "x": 260, "y": 515 },
       "size": { "x": 160, "y": 187 },
       "seats": [
-        { "position": { "x": 260, "y": 572 }, "direction": "up" }
+        { "position": { "x": 260, "y": 598 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     },
@@ -53,7 +53,7 @@
       "position": { "x": 445, "y": 515 },
       "size": { "x": 160, "y": 188 },
       "seats": [
-        { "position": { "x": 445, "y": 572 }, "direction": "up" }
+        { "position": { "x": 445, "y": 598 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     },
@@ -62,7 +62,7 @@
       "position": { "x": 260, "y": 700 },
       "size": { "x": 160, "y": 187 },
       "seats": [
-        { "position": { "x": 260, "y": 757 }, "direction": "up" }
+        { "position": { "x": 260, "y": 783 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     },
@@ -71,131 +71,125 @@
       "position": { "x": 445, "y": 700 },
       "size": { "x": 160, "y": 189 },
       "seats": [
-        { "position": { "x": 445, "y": 757 }, "direction": "up" }
+        { "position": { "x": 445, "y": 783 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     }
   ],
   "sofas": [
     {
-      "spritePath": "assets/office_game/furniture/lounge/coffee_table.png",
-      "position": { "x": 1288, "y": 457 },
-      "size": { "x": 132, "y": 198 },
-      "behindCharacters": true
-    },
-    {
       "spritePath": "assets/office_game/furniture/lounge/sofa_3seat.png",
-      "position": { "x": 1288, "y": 285 },
-      "size": { "x": 338, "y": 161 },
+      "position": { "x": 1288, "y": 255 },
+      "size": { "x": 298, "y": 142 },
       "seats": [
-        { "position": { "x": 1198, "y": 322 }, "direction": "down", "exactPosition": true },
-        { "position": { "x": 1288, "y": 322 }, "direction": "down", "exactPosition": true },
-        { "position": { "x": 1378, "y": 322 }, "direction": "down", "exactPosition": true }
+        { "position": { "x": 1210, "y": 286 }, "direction": "down", "exactPosition": true },
+        { "position": { "x": 1288, "y": 286 }, "direction": "down", "exactPosition": true },
+        { "position": { "x": 1366, "y": 286 }, "direction": "down", "exactPosition": true }
       ],
       "behindCharacters": true
     },
     {
       "spritePath": "assets/office_game/furniture/lounge/sofa_chair_left.png",
-      "position": { "x": 1142, "y": 456 },
-      "size": { "x": 96, "y": 228 },
+      "position": { "x": 1132, "y": 456 },
+      "size": { "x": 82, "y": 194 },
       "seats": [
-        { "position": { "x": 1142, "y": 456 }, "direction": "right", "exactPosition": true }
+        { "position": { "x": 1132, "y": 456 }, "direction": "right", "exactPosition": true }
       ],
       "behindCharacters": true
     },
     {
       "spritePath": "assets/office_game/furniture/lounge/sofa_bottom.png",
-      "position": { "x": 1288, "y": 635 },
-      "size": { "x": 262, "y": 140 },
+      "position": { "x": 1288, "y": 675 },
+      "size": { "x": 226, "y": 121 },
       "seats": [
-        { "position": { "x": 1238, "y": 600 }, "direction": "up", "exactPosition": true },
-        { "position": { "x": 1338, "y": 600 }, "direction": "up", "exactPosition": true }
+        { "position": { "x": 1244, "y": 645 }, "direction": "up", "exactPosition": true },
+        { "position": { "x": 1332, "y": 645 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true
     },
     {
       "spritePath": "assets/office_game/furniture/lounge/sofa_chair_right.png",
-      "position": { "x": 1434, "y": 456 },
-      "size": { "x": 96, "y": 228 },
+      "position": { "x": 1444, "y": 456 },
+      "size": { "x": 82, "y": 194 },
       "seats": [
-        { "position": { "x": 1434, "y": 456 }, "direction": "left", "exactPosition": true }
+        { "position": { "x": 1444, "y": 456 }, "direction": "left", "exactPosition": true }
       ],
       "behindCharacters": true
     }
   ],
   "meetingFurniture": [
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_top.png",
-      "position": { "x": 804, "y": 274 },
-      "size": { "x": 70, "y": 90 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_down.png",
+      "position": { "x": 804, "y": 268 },
+      "size": { "x": 88, "y": 112 },
       "seats": [
-        { "position": { "x": 804, "y": 274 }, "direction": "down", "exactPosition": true }
+        { "position": { "x": 804, "y": 246 }, "direction": "down", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": -90,
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_upper_left.png",
-      "position": { "x": 708, "y": 350 },
-      "size": { "x": 68, "y": 88 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_left.png",
+      "position": { "x": 692, "y": 350 },
+      "size": { "x": 88, "y": 114 },
       "seats": [
-        { "position": { "x": 708, "y": 350 }, "direction": "right", "exactPosition": true }
+        { "position": { "x": 692, "y": 328 }, "direction": "right", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": -70,
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_upper_right.png",
-      "position": { "x": 902, "y": 350 },
-      "size": { "x": 68, "y": 88 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_right.png",
+      "position": { "x": 916, "y": 350 },
+      "size": { "x": 88, "y": 114 },
       "seats": [
-        { "position": { "x": 902, "y": 350 }, "direction": "left", "exactPosition": true }
+        { "position": { "x": 916, "y": 328 }, "direction": "left", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": -70,
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_mid_left.png",
-      "position": { "x": 708, "y": 432 },
-      "size": { "x": 68, "y": 88 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_left.png",
+      "position": { "x": 692, "y": 432 },
+      "size": { "x": 88, "y": 114 },
       "seats": [
-        { "position": { "x": 708, "y": 432 }, "direction": "right", "exactPosition": true }
+        { "position": { "x": 692, "y": 410 }, "direction": "right", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": -20,
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_mid_right.png",
-      "position": { "x": 902, "y": 432 },
-      "size": { "x": 68, "y": 88 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_right.png",
+      "position": { "x": 916, "y": 432 },
+      "size": { "x": 88, "y": 114 },
       "seats": [
-        { "position": { "x": 902, "y": 432 }, "direction": "left", "exactPosition": true }
+        { "position": { "x": 916, "y": 410 }, "direction": "left", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": -20,
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_lower_left.png",
-      "position": { "x": 708, "y": 514 },
-      "size": { "x": 68, "y": 88 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_left.png",
+      "position": { "x": 692, "y": 514 },
+      "size": { "x": 88, "y": 114 },
       "seats": [
-        { "position": { "x": 708, "y": 514 }, "direction": "right", "exactPosition": true }
+        { "position": { "x": 692, "y": 492 }, "direction": "right", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": 40,
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_lower_right.png",
-      "position": { "x": 902, "y": 514 },
-      "size": { "x": 68, "y": 88 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_right.png",
+      "position": { "x": 916, "y": 514 },
+      "size": { "x": 88, "y": 114 },
       "seats": [
-        { "position": { "x": 902, "y": 514 }, "direction": "left", "exactPosition": true }
+        { "position": { "x": 916, "y": 492 }, "direction": "left", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": 40,
@@ -210,11 +204,11 @@
       "angleDegrees": 0
     },
     {
-      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_front_left.png",
-      "position": { "x": 804, "y": 646 },
-      "size": { "x": 70, "y": 90 },
+      "spritePath": "assets/office_game/furniture/meeting/meeting_chair_up.png",
+      "position": { "x": 804, "y": 656 },
+      "size": { "x": 88, "y": 112 },
       "seats": [
-        { "position": { "x": 804, "y": 646 }, "direction": "up", "exactPosition": true }
+        { "position": { "x": 804, "y": 634 }, "direction": "up", "exactPosition": true }
       ],
       "behindCharacters": true,
       "priorityOffset": 70,
@@ -225,39 +219,66 @@
     {
       "name": "程序员",
       "spriteBaseName": "programmer",
-      "position": { "x": 260, "y": 392 },
+      "position": { "x": 260, "y": 418 },
       "motionAtlasBasePath": "assets/office_game/characters/programmer"
     },
     {
       "name": "设计师",
       "spriteBaseName": "designer",
-      "position": { "x": 445, "y": 392 },
+      "position": { "x": 445, "y": 418 },
       "motionAtlasBasePath": "assets/office_game/characters/designer"
     },
     {
       "name": "项目经理",
       "spriteBaseName": "pm",
-      "position": { "x": 260, "y": 572 },
+      "position": { "x": 260, "y": 598 },
       "motionAtlasBasePath": "assets/office_game/characters/pm"
     },
     {
       "name": "测试",
       "spriteBaseName": "tester",
-      "position": { "x": 445, "y": 572 },
+      "position": { "x": 445, "y": 598 },
       "motionAtlasBasePath": "assets/office_game/characters/tester"
     },
     {
       "name": "运营",
       "spriteBaseName": "ops",
-      "position": { "x": 260, "y": 757 },
+      "position": { "x": 260, "y": 783 },
       "motionAtlasBasePath": "assets/office_game/characters/ops"
     }
   ],
+  "characterStatePositions": {
+    "程序员": {
+        "work": { "x": 260, "y": 378, "direction": "up" },
+            "meeting": { "x": 698, "y": 502, "direction": "down" },
+        "rest": { "x": 1210, "y": 286, "direction": "down" }
+    },
+    "设计师": {
+        "work": { "x": 445, "y": 378, "direction": "up" },
+            "meeting": { "x": 916, "y": 416, "direction": "left" },
+        "rest": { "x": 1288, "y": 318, "direction": "down" }
+    },
+    "项目经理": {
+        "work": { "x": 260, "y": 550, "direction": "up" },
+            "meeting": { "x": 804, "y": 656, "direction": "up" },
+        "rest": { "x": 1366, "y": 310, "direction": "down" }
+    },
+    "测试": {
+        "work": { "x": 445, "y": 558, "direction": "up" },
+          "meeting": { "x": 692, "y": 432, "direction": "right" },
+        "rest": { "x": 1132, "y": 456, "direction": "right" }
+    },
+    "运营": {
+        "work": { "x": 260, "y": 743, "direction": "up" },
+            "meeting": { "x": 692, "y": 350, "direction": "right" },
+        "rest": { "x": 1244, "y": 661, "direction": "up" }
+    }
+  },
   "decorations": {
-    "waterDispenserSpritePath": "assets/office_game/furniture/decor/water_dispenser.png",
-    "waterDispenserPosition": { "x": 600, "y": 585 },
+    "waterDispenserSpritePath": "",
+    "waterDispenserPosition": { "x": 700, "y": 785 },
     "waterDispenserSize": { "x": 72, "y": 132 },
-    "plantSpritePath": "assets/office_game/furniture/decor/plant_large.png",
+    "plantSpritePath": "",
     "plantSize": { "x": 76, "y": 136 },
     "plantPositions": [
       { "x": 70, "y": 180 },
@@ -266,23 +287,124 @@
     ],
     "extraSprites": [
       {
+        "path": "assets/office_game/furniture/chairs/office_chair_back.png",
+        "position": { "x": 260, "y": 400 },
+        "size": { "x": 90, "y": 130 },
+          "priority": 1480
+      },
+      {
+        "path": "assets/office_game/furniture/chairs/office_chair_back.png",
+        "position": { "x": 445, "y": 400 },
+        "size": { "x": 90, "y": 130 },
+          "priority": 1480
+      },
+      {
+        "path": "assets/office_game/furniture/chairs/office_chair_back.png",
+        "position": { "x": 260, "y": 580 },
+        "size": { "x": 90, "y": 130 },
+          "priority": 1660
+      },
+      {
+        "path": "assets/office_game/furniture/chairs/office_chair_back.png",
+        "position": { "x": 445, "y": 580 },
+        "size": { "x": 90, "y": 130 },
+          "priority": 1660
+      },
+      {
+        "path": "assets/office_game/furniture/chairs/office_chair_back.png",
+        "position": { "x": 260, "y": 765 },
+        "size": { "x": 90, "y": 130 },
+          "priority": 1845
+      },
+      {
+        "path": "assets/office_game/furniture/chairs/office_chair_back.png",
+        "position": { "x": 445, "y": 765 },
+        "size": { "x": 90, "y": 130 },
+          "priority": 1845
+      },
+      {
         "path": "assets/office_game/furniture/decor/whiteboard.png",
-        "position": { "x": 840, "y": 170 },
-        "size": { "x": 176, "y": 118 },
-        "priority": -39
-      },
-      {
-        "path": "assets/office_game/furniture/decor/plant_round.png",
-        "position": { "x": 1520, "y": 350 },
-        "size": { "x": 84, "y": 110 },
-        "priority": -39
-      },
-      {
-        "path": "assets/office_game/furniture/decor/plant_spiky.png",
-        "position": { "x": 1160, "y": 580 },
-        "size": { "x": 84, "y": 118 },
+        "position": { "x": 840, "y": 158 },
+        "size": { "x": 190, "y": 184 },
         "priority": -39
       }
     ]
-  }
+  },
+  "walkRoutes": [
+    {
+      "name": "左侧办公区主干道",
+      "points": [
+        { "x": 590, "y": 210 },
+        { "x": 590, "y": 835 }
+      ]
+    },
+    {
+      "name": "中右讨论休息区主干道",
+      "points": [
+        { "x": 1035, "y": 210 },
+        { "x": 1035, "y": 835 }
+      ]
+    },
+    {
+      "name": "顶部横向主干道",
+        "points": [
+          { "x": 170, "y": 210 },
+          { "x": 590, "y": 210 },
+          { "x": 1035, "y": 210 }
+        ]
+      },
+    {
+      "name": "底部横向主干道",
+      "points": [
+        { "x": 120, "y": 835 },
+        { "x": 590, "y": 835 },
+        { "x": 1035, "y": 835 },
+        { "x": 1480, "y": 835 }
+      ]
+    },
+    {
+      "name": "左侧斜向通道",
+      "points": [
+        { "x": 170, "y": 210 },
+        { "x": 120, "y": 835 }
+      ]
+    },
+    {
+      "name": "办公区上排通道",
+      "points": [
+        { "x": 151, "y": 413 },
+        { "x": 590, "y": 412 }
+      ]
+    },
+    {
+      "name": "办公区下排通道",
+      "points": [
+        { "x": 135, "y": 612 },
+        { "x": 590, "y": 610 }
+      ]
+    },
+    {
+      "name": "休息区环形通道",
+      "points": [
+        { "x": 1035, "y": 579 },
+        { "x": 1386, "y": 568 },
+        { "x": 1380, "y": 343 },
+        { "x": 1035, "y": 335 }
+      ]
+    },
+    {
+      "name": "休息区中线通道",
+      "points": [
+        { "x": 1205, "y": 571 },
+        { "x": 1198, "y": 340 }
+      ]
+    },
+    {
+      "name": "右下沙发接入通道",
+      "points": [
+        { "x": 1476, "y": 835 },
+        { "x": 1386, "y": 568 }
+      ]
+    }
+  ]
 }

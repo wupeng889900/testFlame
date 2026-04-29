@@ -6,8 +6,18 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import '../core/office_asset_policy.dart';
+import '../core/enums.dart';
 import 'layout_file_loader_stub.dart'
     if (dart.library.io) 'layout_file_loader_io.dart';
+
+const Set<String> _validSeatDirections = {'left', 'right', 'up', 'down'};
+
+class _LoadedLayoutAsset {
+  final String content;
+  final bool fromProjectAsset;
+
+  const _LoadedLayoutAsset(this.content, {required this.fromProjectAsset});
+}
 
 class CharacterSpawnConfig {
   final String name;
@@ -188,6 +198,23 @@ class DecorationConfig {
   }
 }
 
+class WalkRouteConfig {
+  final String name;
+  final List<Vector2> points;
+
+  const WalkRouteConfig({required this.name, required this.points});
+
+  factory WalkRouteConfig.fromJson(Map<String, dynamic> json) {
+    return WalkRouteConfig(
+      name: json['name'] as String? ?? '主干道',
+      points:
+          (json['points'] as List<dynamic>? ?? const [])
+              .map((item) => _vectorFromJson(item as Map<String, dynamic>))
+              .toList(),
+    );
+  }
+}
+
 class OfficeSceneConfig {
   static const String layoutAsset = 'assets/data/office_game_layout.json';
   static const String floorAsset =
@@ -202,10 +229,18 @@ class OfficeSceneConfig {
   static List<FurniturePlacementConfig> meetingFurniture =
       _defaultMeetingFurniture();
   static List<CharacterSpawnConfig> characters = _defaultCharacters();
+  static Map<String, Map<CharacterState, Vector2>> characterStatePositions =
+      _defaultCharacterStatePositions();
+  static Map<String, Map<CharacterState, String>> characterStateDirections =
+      _defaultCharacterStateDirections();
   static DecorationConfig decorations = _defaultDecorations();
+  static List<WalkRouteConfig> walkRoutes = _defaultWalkRoutes();
+  static bool loadedFromProjectAsset = false;
 
   static Future<void> load() async {
-    final raw = await _loadLayoutAsset();
+    final loaded = await _loadLayoutAsset();
+    loadedFromProjectAsset = loaded.fromProjectAsset;
+    final raw = loaded.content;
     final json = jsonDecode(raw) as Map<String, dynamic>;
 
     sceneSize = _vectorFromJson(json['sceneSize'] as Map<String, dynamic>);
@@ -244,19 +279,35 @@ class OfficeSceneConfig {
                   CharacterSpawnConfig.fromJson(item as Map<String, dynamic>),
             )
             .toList();
+    characterStatePositions = _characterStatePositionsFromJson(
+      json['characterStatePositions'] as Map<String, dynamic>?,
+    );
+    characterStateDirections = _characterStateDirectionsFromJson(
+      json['characterStatePositions'] as Map<String, dynamic>?,
+    );
     decorations = DecorationConfig.fromJson(
       json['decorations'] as Map<String, dynamic>,
     );
+    walkRoutes =
+        (json['walkRoutes'] as List<dynamic>? ?? const [])
+            .map(
+              (item) => WalkRouteConfig.fromJson(item as Map<String, dynamic>),
+            )
+            .where((route) => route.points.length >= 2)
+            .toList();
   }
 
-  static Future<String> _loadLayoutAsset() async {
+  static Future<_LoadedLayoutAsset> _loadLayoutAsset() async {
     final projectAsset = await tryLoadProjectAsset(layoutAsset);
     if (projectAsset != null) {
-      return projectAsset;
+      return _LoadedLayoutAsset(projectAsset, fromProjectAsset: true);
     }
 
     if (!kIsWeb) {
-      return rootBundle.loadString(layoutAsset, cache: false);
+      return _LoadedLayoutAsset(
+        await rootBundle.loadString(layoutAsset, cache: false),
+        fromProjectAsset: false,
+      );
     }
 
     final cacheBuster = DateTime.now().microsecondsSinceEpoch;
@@ -264,12 +315,32 @@ class OfficeSceneConfig {
     try {
       final response = await http.get(assetUri);
       if (response.statusCode == 200) {
-        return utf8.decode(response.bodyBytes);
+        return _LoadedLayoutAsset(
+          utf8.decode(response.bodyBytes),
+          fromProjectAsset: false,
+        );
       }
       throw StateError('Layout asset HTTP ${response.statusCode}');
     } catch (_) {
-      return rootBundle.loadString(layoutAsset, cache: false);
+      return _LoadedLayoutAsset(
+        await rootBundle.loadString(layoutAsset, cache: false),
+        fromProjectAsset: false,
+      );
     }
+  }
+
+  static Future<bool> saveCharacterStatePositionsToProjectAsset() async {
+    final projectAsset = await tryLoadProjectAsset(layoutAsset);
+    if (projectAsset == null) {
+      return false;
+    }
+
+    final json = jsonDecode(projectAsset) as Map<String, dynamic>;
+    json['characterStatePositions'] = _characterStatePositionsToJson(
+      characterStatePositions,
+    );
+    const encoder = JsonEncoder.withIndent('  ');
+    return trySaveProjectAsset(layoutAsset, '${encoder.convert(json)}\n');
   }
 
   static List<ZoneConfig> _defaultZones() {
@@ -355,48 +426,78 @@ class OfficeSceneConfig {
     return [
       FurniturePlacementConfig(
         spritePath: '$assetRoot/furniture/lounge/coffee_table.png',
-        position: Vector2(1292, 360),
+        position: Vector2(1288, 457),
         size: Vector2(
-          OfficeAssetPolicy.physicalMillimetersToSceneDp(1200),
-          OfficeAssetPolicy.physicalMillimetersToSceneDp(704),
+          OfficeAssetPolicy.physicalMillimetersToSceneDp(896),
+          OfficeAssetPolicy.physicalMillimetersToSceneDp(1344),
         ),
         behindCharacters: true,
       ),
       FurniturePlacementConfig(
         spritePath: '$assetRoot/furniture/lounge/sofa_3seat.png',
-        position: Vector2(1290, 330),
-        size: Vector2(315, 190),
+        position: Vector2(1288, 255),
+        size: Vector2(298, 142),
         seats: [
-          SeatPlacementConfig(position: Vector2(1210, 230), direction: 'down'),
-          SeatPlacementConfig(position: Vector2(1380, 230), direction: 'down'),
-          SeatPlacementConfig(position: Vector2(1290, 336), direction: 'down'),
-          SeatPlacementConfig(position: Vector2(1210, 430), direction: 'up'),
-          SeatPlacementConfig(position: Vector2(1380, 430), direction: 'up'),
+          SeatPlacementConfig(
+            position: Vector2(1210, 286),
+            direction: 'down',
+            exactPosition: true,
+          ),
+          SeatPlacementConfig(
+            position: Vector2(1288, 286),
+            direction: 'down',
+            exactPosition: true,
+          ),
+          SeatPlacementConfig(
+            position: Vector2(1366, 286),
+            direction: 'down',
+            exactPosition: true,
+          ),
         ],
         behindCharacters: true,
       ),
       FurniturePlacementConfig(
-        spritePath: '$assetRoot/furniture/lounge/sofa_1seat.png',
-        position: Vector2(1210, 200),
-        size: Vector2(135, 120),
+        spritePath: '$assetRoot/furniture/lounge/sofa_chair_left.png',
+        position: Vector2(1132, 456),
+        size: Vector2(82, 194),
+        seats: [
+          SeatPlacementConfig(
+            position: Vector2(1132, 456),
+            direction: 'right',
+            exactPosition: true,
+          ),
+        ],
         behindCharacters: true,
       ),
       FurniturePlacementConfig(
-        spritePath: '$assetRoot/furniture/lounge/sofa_1seat.png',
-        position: Vector2(1380, 200),
-        size: Vector2(135, 120),
+        spritePath: '$assetRoot/furniture/lounge/sofa_bottom.png',
+        position: Vector2(1288, 675),
+        size: Vector2(226, 121),
+        seats: [
+          SeatPlacementConfig(
+            position: Vector2(1244, 645),
+            direction: 'up',
+            exactPosition: true,
+          ),
+          SeatPlacementConfig(
+            position: Vector2(1332, 645),
+            direction: 'up',
+            exactPosition: true,
+          ),
+        ],
         behindCharacters: true,
       ),
       FurniturePlacementConfig(
-        spritePath: '$assetRoot/furniture/lounge/sofa_1seat.png',
-        position: Vector2(1210, 460),
-        size: Vector2(135, 120),
-        behindCharacters: true,
-      ),
-      FurniturePlacementConfig(
-        spritePath: '$assetRoot/furniture/lounge/sofa_1seat.png',
-        position: Vector2(1380, 460),
-        size: Vector2(135, 120),
+        spritePath: '$assetRoot/furniture/lounge/sofa_chair_right.png',
+        position: Vector2(1444, 456),
+        size: Vector2(82, 194),
+        seats: [
+          SeatPlacementConfig(
+            position: Vector2(1444, 456),
+            direction: 'left',
+            exactPosition: true,
+          ),
+        ],
         behindCharacters: true,
       ),
     ];
@@ -459,6 +560,163 @@ class OfficeSceneConfig {
     ];
   }
 
+  static Map<String, Map<CharacterState, Vector2>>
+  _defaultCharacterStatePositions() {
+    return {
+      '程序员': {
+        CharacterState.work: Vector2(260, 418),
+        CharacterState.meeting: Vector2(804, 268),
+        CharacterState.rest: Vector2(1210, 286),
+      },
+      '设计师': {
+        CharacterState.work: Vector2(445, 418),
+        CharacterState.meeting: Vector2(916, 432),
+        CharacterState.rest: Vector2(1288, 286),
+      },
+      '项目经理': {
+        CharacterState.work: Vector2(260, 598),
+        CharacterState.meeting: Vector2(804, 656),
+        CharacterState.rest: Vector2(1366, 286),
+      },
+      '测试': {
+        CharacterState.work: Vector2(445, 598),
+        CharacterState.meeting: Vector2(692, 432),
+        CharacterState.rest: Vector2(1132, 456),
+      },
+      '运营': {
+        CharacterState.work: Vector2(260, 783),
+        CharacterState.meeting: Vector2(692, 350),
+        CharacterState.rest: Vector2(1244, 645),
+      },
+    };
+  }
+
+  static Map<String, Map<CharacterState, String>>
+  _defaultCharacterStateDirections() {
+    return {
+      '程序员': {
+        CharacterState.work: 'up',
+        CharacterState.meeting: 'down',
+        CharacterState.rest: 'down',
+      },
+      '设计师': {
+        CharacterState.work: 'up',
+        CharacterState.meeting: 'left',
+        CharacterState.rest: 'down',
+      },
+      '项目经理': {
+        CharacterState.work: 'up',
+        CharacterState.meeting: 'up',
+        CharacterState.rest: 'down',
+      },
+      '测试': {
+        CharacterState.work: 'up',
+        CharacterState.meeting: 'right',
+        CharacterState.rest: 'right',
+      },
+      '运营': {
+        CharacterState.work: 'up',
+        CharacterState.meeting: 'right',
+        CharacterState.rest: 'up',
+      },
+    };
+  }
+
+  static Map<String, Map<CharacterState, Vector2>>
+  _characterStatePositionsFromJson(Map<String, dynamic>? json) {
+    final result = _defaultCharacterStatePositions();
+    if (json == null) {
+      return result;
+    }
+
+    for (final entry in json.entries) {
+      final states = entry.value;
+      if (states is! Map<String, dynamic>) {
+        continue;
+      }
+      final characterPositions = <CharacterState, Vector2>{
+        ...?result[entry.key],
+      };
+      for (final stateEntry in states.entries) {
+        final state = _characterStateFromJsonKey(stateEntry.key);
+        final value = stateEntry.value;
+        if (state == null || value is! Map<String, dynamic>) {
+          continue;
+        }
+        characterPositions[state] = _vectorFromJson(value);
+      }
+      result[entry.key] = characterPositions;
+    }
+    return result;
+  }
+
+  static Map<String, Map<CharacterState, String>>
+  _characterStateDirectionsFromJson(Map<String, dynamic>? json) {
+    final result = _cloneCharacterStateDirections(
+      _defaultCharacterStateDirections(),
+    );
+    if (json == null) {
+      return result;
+    }
+
+    for (final entry in json.entries) {
+      final states = entry.value;
+      if (states is! Map<String, dynamic>) {
+        continue;
+      }
+      final characterDirections = <CharacterState, String>{
+        ...?result[entry.key],
+      };
+      for (final stateEntry in states.entries) {
+        final state = _characterStateFromJsonKey(stateEntry.key);
+        final value = stateEntry.value;
+        if (state == null || value is! Map<String, dynamic>) {
+          continue;
+        }
+        final direction = value['direction'];
+        if (direction is String && _validSeatDirections.contains(direction)) {
+          characterDirections[state] = direction;
+        }
+      }
+      result[entry.key] = characterDirections;
+    }
+    return result;
+  }
+
+  static Map<String, dynamic> _characterStatePositionsToJson(
+    Map<String, Map<CharacterState, Vector2>> positions,
+  ) {
+    return {
+      for (final characterEntry in positions.entries)
+        characterEntry.key: {
+          for (final stateEntry in characterEntry.value.entries)
+            _characterStateToJsonKey(stateEntry.key): {
+              'x': stateEntry.value.x,
+              'y': stateEntry.value.y,
+              if (characterStateDirections[characterEntry.key]?[stateEntry
+                      .key] !=
+                  null)
+                'direction':
+                    characterStateDirections[characterEntry.key]![stateEntry
+                        .key]!,
+            },
+        },
+    };
+  }
+
+  static Map<String, Map<CharacterState, String>>
+  _cloneCharacterStateDirections(
+    Map<String, Map<CharacterState, String>> source,
+  ) {
+    return {
+      for (final characterEntry in source.entries)
+        characterEntry.key: {
+          for (final stateEntry in characterEntry.value.entries)
+            stateEntry.key: stateEntry.value,
+        },
+    };
+  }
+
   static DecorationConfig _defaultDecorations() {
     return DecorationConfig(
       waterDispenserSpritePath:
@@ -492,6 +750,66 @@ class OfficeSceneConfig {
       ],
     );
   }
+
+  static List<WalkRouteConfig> _defaultWalkRoutes() {
+    return [
+      WalkRouteConfig(
+        name: '左侧办公区主干道',
+        points: [Vector2(590, 210), Vector2(590, 835)],
+      ),
+      WalkRouteConfig(
+        name: '中右讨论休息区主干道',
+        points: [Vector2(1035, 210), Vector2(1035, 835)],
+      ),
+      WalkRouteConfig(
+        name: '顶部横向主干道',
+        points: [
+          Vector2(170, 210),
+          Vector2(590, 210),
+          Vector2(1035, 210),
+          Vector2(1480, 210),
+        ],
+      ),
+      WalkRouteConfig(
+        name: '底部横向主干道',
+        points: [
+          Vector2(120, 835),
+          Vector2(590, 835),
+          Vector2(1035, 835),
+          Vector2(1480, 835),
+        ],
+      ),
+      WalkRouteConfig(
+        name: '左侧斜向通道',
+        points: [Vector2(170, 210), Vector2(120, 835)],
+      ),
+      WalkRouteConfig(
+        name: '办公区上排通道',
+        points: [Vector2(151, 413), Vector2(590, 412)],
+      ),
+      WalkRouteConfig(
+        name: '办公区下排通道',
+        points: [Vector2(135, 612), Vector2(590, 610)],
+      ),
+      WalkRouteConfig(
+        name: '休息区环形通道',
+        points: [
+          Vector2(1035, 579),
+          Vector2(1386, 568),
+          Vector2(1380, 343),
+          Vector2(1035, 335),
+        ],
+      ),
+      WalkRouteConfig(
+        name: '休息区中线通道',
+        points: [Vector2(1205, 571), Vector2(1198, 340)],
+      ),
+      WalkRouteConfig(
+        name: '右下沙发接入通道',
+        points: [Vector2(1476, 835), Vector2(1386, 568)],
+      ),
+    ];
+  }
 }
 
 Vector2 _vectorFromJson(Map<String, dynamic> json) {
@@ -502,4 +820,35 @@ Color _colorFromHex(String value) {
   final normalized = value.replaceFirst('#', '');
   final hex = normalized.length == 6 ? 'FF$normalized' : normalized;
   return Color(int.parse(hex, radix: 16));
+}
+
+CharacterState? _characterStateFromJsonKey(String key) {
+  switch (key) {
+    case 'work':
+    case 'working':
+      return CharacterState.work;
+    case 'meeting':
+    case 'discussing':
+      return CharacterState.meeting;
+    case 'rest':
+    case 'resting':
+      return CharacterState.rest;
+    default:
+      return null;
+  }
+}
+
+String _characterStateToJsonKey(CharacterState state) {
+  switch (state) {
+    case CharacterState.work:
+      return 'work';
+    case CharacterState.meeting:
+      return 'meeting';
+    case CharacterState.rest:
+      return 'rest';
+    case CharacterState.walk:
+      return 'walk';
+    case CharacterState.idle:
+      return 'idle';
+  }
 }
